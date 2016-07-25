@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="menu_item">
+        <item>复制</item>
+        <item>重命名</item>
+        <item>删除</item>
+    </array>
+
+</resources>

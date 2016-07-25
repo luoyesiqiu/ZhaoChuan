@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+<group>
+    <item
+        android:id="@+id/nav_share"
+        android:icon="@mipmap/share_menu"
+        android:title="分享文件" />
+    <item
+        android:id="@+id/nav_getfile"
+        android:icon="@mipmap/download_menu"
+        android:title="获取文件" />
+</group>
+    <group>
+    <item
+        android:title="账户" >
+        <menu>
+        <item
+            android:icon="@mipmap/login_menu"
+            android:title="登录">
+        </item>
+        </menu>
+    </item>
+    </group>
+    <group>
+        <item android:title="其他">
+    <menu  >
+        <item
+            android:id="@+id/nav_setting"
+            android:icon="@mipmap/setting_menu"
+            android:title="设置" />
+        <item
+            android:id="@+id/nav_about"
+            android:icon="@mipmap/about_menu"
+            android:title="关于" />
+    </menu>
+        </item>
+    </group>
+
+</menu>
+
