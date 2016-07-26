@@ -108,7 +108,7 @@ public class RemoteListFragment extends Fragment {
                         //发送发送文件命令，传进去一个远程的目录+文件名
                         if(LocalListFragment.willSendFilePath!=null) {
                             SessionActivity.tcpService.sendSendFileMsg(curPath.toString() + File.separator + LocalListFragment.willSendFilePath.getName());
-                            SessionActivity.tcpService.sendCopyFileMsg(LocalListFragment.willSendFilePath);
+                            SessionActivity.tcpService.sendFile(LocalListFragment.willSendFilePath);
                             LocalListFragment.willSendFilePath=null;//粘贴了就为空
                         }
                     } catch (IOException e) {
