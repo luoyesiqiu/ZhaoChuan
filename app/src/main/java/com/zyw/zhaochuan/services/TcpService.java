@@ -57,6 +57,7 @@ public  class TcpService extends Service implements DataOperator {
     public static final String REQUEST_TYPE_GET_FILE="get_file";//请求获取远端文件
     public static final String REQUEST_TYPE_CONNECTED="connect_server";//请求连接
     public static final String REQUEST_TYPE_DISCONNECT="disconnect";//请求连接
+    public static final String REQUEST_TYPE_COPY_FILE="copy_file";//收到这个命令，就将本地文件复制到本地的另一个位置
     /**应答类型**/
     public static final String RESPONSE_TYPE_CONTENT="resp_list";//表示收到目录，收到这个命令就更新自己的远程文件列表
 
@@ -65,12 +66,9 @@ public  class TcpService extends Service implements DataOperator {
     public static final String NOTICE_TYPE_UPDATE_REMOTE_LIST="notice_update_remote_list";//通知目标Activity，更新列表
     public static  final String NOTICE_TYPE_GETTED_MSG="notice_update_progress";//通知目标Activity，收到目录，测试用
     public static  final String NOTICE_TYPE_FILE_CLOSE_ACTIVITY="notice_close_activity";//通知目标Activity，关闭界面
-    /**包的主体的结束标志**/
+    /**结束标志**/
     public static final int END_OF_STREAM =-1;
-    public  static  final int END_OF_STRING='\0';
     /**全局变量声明**/
-    //向UI线程发送消息的类
-    private Handler handler;
     //是否提供服务
     public boolean isServer=true;
     //远程文件存储目录，指示当收到文件时，远程该存放文件在哪里，当用户发送sendSendFileMsg命令时，这个变量就被设置
@@ -216,6 +214,8 @@ public  class TcpService extends Service implements DataOperator {
          */
         public void runCmd() throws IOException {
             String cmd=readCommand();
+
+
             //收到目录，测试用=================================
             Intent it=new Intent(NOTICE_TYPE_GETTED_MSG);
             it.putExtra("json",cmd);
@@ -226,6 +226,7 @@ public  class TcpService extends Service implements DataOperator {
                 json=new JSONObject(cmd);
             } catch (Exception e) {
                 e.printStackTrace();
+                return;//Json格式出错还搞毛啊，直接返回
             }
             //收到获取目录的命令
             if(cmd.contains(REQUEST_TYPE_GET_CONTENT))
@@ -288,17 +289,32 @@ public  class TcpService extends Service implements DataOperator {
             else if(cmd.contains(REQUEST_TYPE_GET_FILE))
             {
                 try {
-                    //setSaveFilePath(json.getString("path"));
                     sendFile(new File(json.getString("path")));
                 } catch (JSONException e) {
                     e.printStackTrace();
+                }
+            }
+            //收到复制文件的命令，同端之间
+            else if(cmd.contains(REQUEST_TYPE_COPY_FILE))
+            {
+
+                if(json!=null) {
+                    try {
+                        File file=new File(json.getString("path"));
+                        File newFile=new File(json.getString("new_path"));
+
+                        Utils.copyFile(file,newFile,null);//同端之间复制文件
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    sendContent();
                 }
             }
             //客户端连接上
             else if(cmd.contains(REQUEST_TYPE_CONNECTED))
             {
                 String ip=socket.getInetAddress().getHostAddress();
-                //Log.v(TAG,"客户端连接上----------------->"+ip);
                 remoteHost= ip.toString();
                 noticeClientConnected();//给界面发送通知
             }
@@ -308,7 +324,6 @@ public  class TcpService extends Service implements DataOperator {
                 Intent intent=new Intent(NOTICE_TYPE_FILE_CLOSE_ACTIVITY);
                 sendBroadcast(intent);
                 isServer=false;
-                //close();
             }
         }
     }
@@ -374,10 +389,7 @@ public  class TcpService extends Service implements DataOperator {
                     out=socket.getOutputStream();
                     in=socket.getInputStream();
                     DataInputStream dataInputStream=new DataInputStream(in);
-                   // Log.v(TAG,"服务器在读数据。。。。。。。。。。。。。。。。。isServer:"+socket.getRemoteSocketAddress());
                         dataType=dataInputStream.readByte();
-                       // Log.v(TAG,dataType+"<-------------");
-
                         if(dataType==DATA_TYPE_CHAR){
                             //字符流
                             runCmd();
@@ -457,7 +469,6 @@ public  class TcpService extends Service implements DataOperator {
                     dataOutputStream=new DataOutputStream(outputStream);
                     dataOutputStream.writeByte(head);//发送头
                     dataOutputStream.write(msg.getBytes());//发送内容体
-                    //dataOutputStream.writeByte(END_OF_STRING);//发送结束标识
                     dataOutputStream.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -609,7 +620,8 @@ public  class TcpService extends Service implements DataOperator {
     @Override
     public void sendCopyFileMsg(String sourceFile, String targetFile)
     {
-
+        final String msg=String.format("{\"command\":\"%s\",\"path\":\"%s\",\"new_path\":\"%s\"}", REQUEST_TYPE_COPY_FILE,sourceFile,targetFile);
+        sendTextMsg(DATA_TYPE_CHAR,msg);
     }
 
     /**

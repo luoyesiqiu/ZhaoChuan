@@ -49,7 +49,8 @@ public class Utils {
         while((len=fileInputStream.read(buf))!=-1)
         {
             readSize+=len;
-            listener.onProgressChange(readSize, max);
+            if(listener!=null)
+                listener.onProgressChange(readSize, max);
             fileOutputStream.write(buf, 0,  len);
             fileOutputStream.flush();
         }

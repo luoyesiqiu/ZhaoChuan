@@ -106,10 +106,21 @@ public class RemoteListFragment extends Fragment {
                 public void onClick(View v) {
                     try {
                         //发送发送文件命令，传进去一个远程的目录+文件名
-                        if(LocalListFragment.willSendFilePath!=null) {
-                            SessionActivity.tcpService.sendSendFileMsg(curPath.toString() + File.separator + LocalListFragment.willSendFilePath.getName());
-                            SessionActivity.tcpService.sendFile(LocalListFragment.willSendFilePath);
-                            LocalListFragment.willSendFilePath=null;//粘贴了就为空
+                        //本地到远程
+                        if(!application.isCopyFromLocal()) {
+                            if (LocalListFragment.willSendFilePath != null) {
+                                SessionActivity.tcpService.sendSendFileMsg(curPath.toString() + File.separator + LocalListFragment.willSendFilePath.getName());
+                                SessionActivity.tcpService.sendFile(LocalListFragment.willSendFilePath);
+                                LocalListFragment.willSendFilePath = null;//粘贴了就为空
+                            }
+                        }
+                        //远程到远程
+                        else
+                        {
+                            if(RemoteListFragment.willSendFilePath!=null)
+                            {
+                                SessionActivity.tcpService.sendCopyFileMsg(RemoteListFragment.willSendFilePath.getAbsolutePath(),curPath.getAbsolutePath());
+                            }
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -203,10 +214,10 @@ public class RemoteListFragment extends Fragment {
                                 switch (which) {
                                     case 0:
                                         //复制,复制远程的了，本地的路径就被清空
-
                                         LocalListFragment.willSendFilePath=null;
                                         willSendFilePath= finalSelectedPath;
                                         Toast.makeText(SessionActivity.thiz,willSendFilePath.getAbsolutePath(),Toast.LENGTH_LONG).show();
+                                        application.setCopyFromLocal(false);//标记不是本地复制
                                         break;
                                     case 1:
                                         //重命名
