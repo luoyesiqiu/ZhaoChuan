@@ -68,12 +68,14 @@ public class RemoteListFragment extends Fragment {
         super.onCreate(savedInstanceState);
         context=getContext();
         if(rootView ==null) {
+            rootAct=SessionActivity.thiz;//放在这里
+            application=(ThisApplication)rootAct.getApplication();
             //根据平台设置根目录
             curPath=new File(((ThisApplication)rootAct.getApplication()).getFileRoot());
             rootView = inflater.inflate(R.layout.file_list_layout, null);
             recyclerView = (RecyclerView) rootView.findViewById(R.id.filelist_reclyclerview);
             pasteFloatButton=(FloatingActionButton)rootView.findViewById(R.id.float_button_paste);
-            rootAct=SessionActivity.thiz;
+
             recyclerView.setLayoutManager(new LinearLayoutManager(context));
             //添加分割线
             recyclerView.addItemDecoration(new RecycleViewDivider(context, LinearLayoutManager.VERTICAL));
@@ -128,7 +130,6 @@ public class RemoteListFragment extends Fragment {
                     }
                 }
             });
-            application=(ThisApplication)rootAct.getApplication();
         }
 
         rootAct.getSupportActionBar().setTitle(getShortPath(curPath.toString()));

@@ -11,7 +11,7 @@ android {
     }
     defaultConfig {
         applicationId "com.zyw.zhaochuan"
-        minSdkVersion 16
+        minSdkVersion 15
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"

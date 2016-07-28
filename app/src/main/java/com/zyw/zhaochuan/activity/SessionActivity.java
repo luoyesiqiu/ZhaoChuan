@@ -95,6 +95,7 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
         }
         transaction.commit();
         setupWindowEnterAnimation();
+        notificationManager=(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notiBuilder=new Notification.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher).setTicker("文件开始传输");
     }
@@ -246,7 +247,7 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
         {
             notiBuilder.setContentTitle("传输完成").setTicker("传输完成");
         }
-        notificationManager.notify(1,notiBuilder.build());
+        notificationManager.notify(1,notiBuilder.getNotification());
 
     }
 }

@@ -296,8 +296,8 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
         {
 
             FileSessionList fileSessionList=new FileSessionList();
-            fileSessionList.setFileKey(key);
-            fileSessionList.setFileName(file.getFilename());
+            fileSessionList.setFileKey(key);//KEY
+            fileSessionList.setFileName(file.getFilename());//文件名
             fileSessionList.setFileSize(file.getLocalFile().length()+"");
             fileSessionList.save(new SaveListener<String>() {
                 @Override
