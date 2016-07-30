@@ -19,6 +19,12 @@ public class FileSessionList extends BmobObject {
     public void setFileKey(String fileKey) {
         this.fileKey = fileKey;
     }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    private String url;
     private  String fileName;
     private  String fileSize;
     private  String fileKey;

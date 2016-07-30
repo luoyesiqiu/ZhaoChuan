@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.zyw.zhaochuan.R;
+import com.zyw.zhaochuan.ThisApplication;
 import com.zyw.zhaochuan.activity.SessionActivity;
 import com.zyw.zhaochuan.parser.ConnectQRBodyParser;
 import com.zyw.zhaochuan.util.QRMaker;
@@ -40,6 +41,8 @@ public class ShowConnectQRFragment extends Fragment {
         boolean isStartFromAp=intent.getBooleanExtra("isAsAP",false);//标记是否作为热点
         String ssid=intent.getStringExtra("ap_ssid");//从MainActivity获取的ssid和key
         String key=intent.getStringExtra("ap_key");
+
+        ((ThisApplication)rootAct.getApplication()).setFileRoot("/sdcard");
         if(isStartFromAp)
         {
             //开启为热点

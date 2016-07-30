@@ -29,7 +29,10 @@ import com.zyw.zhaochuan.fragment.ShowConnectQRFragment;
 import com.zyw.zhaochuan.interfaces.OnTransProgressChangeListener;
 import com.zyw.zhaochuan.services.TcpService;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Created by zyw on 2016/5/14.
@@ -63,11 +66,6 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
         isServer=intent.getBooleanExtra("isServer",false);
         String remote_ip=intent.getStringExtra("remote_ip");//这里得到的是对方的ip,如果是创建连接的那一方他是得不到对方ip的
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-//        progressDialog=new ProgressDialog(this);
-//        progressDialog.setTitle(getApplicationContext().getString(R.string.progress_bar_file_sending));
-//        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-//        progressDialog.setCancelable(false);
 
         Intent servIntent = new Intent(SessionActivity.this, TcpService.class);
         servIntent.putExtra("start_action", TcpService.START_ACTION_LISTEN);
@@ -134,15 +132,34 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
             //收到目录，测试用
             else if(intent.getAction().equals(TcpService.NOTICE_TYPE_GETTED_MSG)) {
                 String json=intent.getStringExtra("json");
-                new AlertDialog.Builder(SessionActivity.thiz)
-                        .setTitle("收到的消息")
-                        .setPositiveButton("确定", null)
-                        .setMessage(json)
-                        .create()
-                        .show();
+                try {
+                    FileWriter fw =new FileWriter("/sdcard/zhaochuan.txt",true);
+                    fw.write("\n\n");
+                    fw.write(getFormatedDate(System.currentTimeMillis())+"\n");
+                    fw.write(json);
+                    if(fw!=null)
+                    fw.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     };
+
+    /***
+     *格式化时间
+     * @param time
+     * @return
+     */
+    public String getFormatedDate(long time)
+    {
+        //String nowStr;
+        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        Date curDate = new Date(time);//获取当前时间
+        return  sdf.format(curDate);//转换时间格式
+
+    }
     /**
      * 监听Activity与Service关联情况
      */
@@ -241,10 +258,14 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
      */
     @Override
     public void onProgressChange(final long current, final long max) {
+        int cur=(int)((double)current/max*100);
 
-        notiBuilder.setProgress(100,(int)((double)current/max*100),false).setContentText("文件传输中...");
+        notiBuilder.setProgress(100,cur,false).setContentTitle(String.format("文件传输中...(%s%%)",cur));
         if(current>=max)
         {
+            //notificationManager.cancel(1);
+            notiBuilder=new Notification.Builder(this);
+            notiBuilder.setSmallIcon(R.mipmap.ic_launcher);
             notiBuilder.setContentTitle("传输完成").setTicker("传输完成");
         }
         notificationManager.notify(1,notiBuilder.getNotification());

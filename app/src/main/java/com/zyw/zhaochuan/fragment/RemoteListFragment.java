@@ -52,7 +52,6 @@ public class RemoteListFragment extends Fragment {
     private Context context;
     private FileListAdapter fileListAdapter;
     private List<FileListItem> fileListItems;
-    final String SD_PATH= Environment.getExternalStorageDirectory().getAbsolutePath();
     private ProgressDialog progressDialog;
     private  View rootView =null;
     private File curPath=null;
@@ -147,17 +146,17 @@ public class RemoteListFragment extends Fragment {
          */
         @Override
         public void onItemClick(View view, int pos) {
-            if (pos == 0 && !curPath.toString().equals("/"))
+            if (pos == 0 && !(curPath.toString().equals("/")||curPath.toString().equals("")))
             {
                 goBack();
             }
             //点击文件夹时,这里要注意数组的范围
-            else if ((pos == 0 && curPath.toString().equals("/")) || !files[pos-1].isFile())
+            else if ((pos == 0 && (curPath.toString().equals("/")||curPath.toString().equals(""))) || !files[pos-1].isFile())
             {
                 try
                 {
-                    //对根目录的处理
-                    if (curPath.toString().equals("/"))
+                    //对根目录的处理,为空时是电脑根目录
+                    if (curPath.toString().equals("/")&&curPath.toString().equals(""))
                     {
                         curPath =new File(files[pos].getAbsolutePath());
                     }
@@ -198,8 +197,8 @@ public class RemoteListFragment extends Fragment {
             {
                 return;
             }
-            else if ((pos == 0 && curPath.toString().equals("/")) || files[pos-1].isFile()|| !files[pos-1].isFile()) {
-                if (curPath.toString().equals("/"))
+            else if ((pos == 0 && (curPath.toString().equals("/")||curPath.toString().equals(""))) || files[pos-1].isFile()|| !files[pos-1].isFile()) {
+                if ((curPath.toString().equals("/")||curPath.toString().equals("")))
                 {
                     selectedPath =files[pos];
                 }
@@ -369,7 +368,7 @@ public class RemoteListFragment extends Fragment {
 
         fileListItems.clear();//清空，必要
 
-        if(!curPath.getAbsolutePath().equals("/"))
+        if(!(curPath.toString().equals("/")||curPath.toString().equals("")))
         {
             //添加返回上级目录项
             fileListItems.add(new FileListItem(application.remoteFolderBmp

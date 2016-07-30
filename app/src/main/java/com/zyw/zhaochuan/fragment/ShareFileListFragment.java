@@ -36,6 +36,7 @@ import com.zyw.zhaochuan.entity.FileListItem;
 import com.zyw.zhaochuan.entity.FileSessionList;
 import com.zyw.zhaochuan.interfaces.FileListInterface;
 import com.zyw.zhaochuan.interfaces.OnTransProgressChangeListener;
+import com.zyw.zhaochuan.parser.FileListParser;
 import com.zyw.zhaochuan.parser.ShareQRBodyParser;
 import com.zyw.zhaochuan.util.FileNameSort;
 import com.zyw.zhaochuan.util.QRMaker;
@@ -55,6 +56,7 @@ import java.util.List;
 import cn.bmob.v3.datatype.BmobFile;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.SaveListener;
+import cn.bmob.v3.listener.UpdateListener;
 import cn.bmob.v3.listener.UploadFileListener;
 
 /**
@@ -254,13 +256,22 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
                                     e1.printStackTrace();
                                 }
                                 qrImageView.setImageBitmap(QRMaker.createQRImage(shareQRBodyParser.toString()));
-                                addFileInfoToServer(f,key);
+                               final String objId= addFileInfoToServer(f,key);
                                 AlertDialog alertDialog=new AlertDialog.Builder(rootAct)
                                         .setView(view)
-                                        .setPositiveButton("取消", new DialogInterface.OnClickListener() {
+                                        .setPositiveButton("取消分享", new DialogInterface.OnClickListener() {
                                             @Override
                                             public void onClick(DialogInterface dialog, int which) {
-
+                                                f.delete();
+                                                FileSessionList sessionList=new FileSessionList();
+                                                sessionList.setObjectId(objId);
+                                                sessionList.delete(new UpdateListener() {
+                                                    @Override
+                                                    public void done(BmobException e) {
+                                                        if(e==null)
+                                                            showToast("取消分享成功");
+                                                    }
+                                                });
                                             }
                                         })
                                         .create();
@@ -292,13 +303,14 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
          * @param key
          */
         boolean isUpdateSuccess=false;
-        private  boolean addFileInfoToServer(BmobFile file,String key)
+        private  String addFileInfoToServer(BmobFile file,String key)
         {
 
-            FileSessionList fileSessionList=new FileSessionList();
+            final FileSessionList fileSessionList=new FileSessionList();
             fileSessionList.setFileKey(key);//KEY
             fileSessionList.setFileName(file.getFilename());//文件名
             fileSessionList.setFileSize(file.getLocalFile().length()+"");
+            fileSessionList.setUrl(file.getUrl());
             fileSessionList.save(new SaveListener<String>() {
                 @Override
                 public void done(String s, BmobException e) {
@@ -310,7 +322,7 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
                     }
                 }
             });
-            return isUpdateSuccess;
+            return isUpdateSuccess?fileSessionList.getObjectId():null;
         }
 
         /**

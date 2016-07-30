@@ -218,7 +218,7 @@ public  class TcpService extends Service implements DataOperator {
 
             //收到目录，测试用=================================
             Intent it=new Intent(NOTICE_TYPE_GETTED_MSG);
-            it.putExtra("json",cmd);
+            it.putExtra("json","收到的消息：\n"+cmd);
             sendBroadcast(it);
 
             JSONObject json=null;
@@ -457,6 +457,9 @@ public  class TcpService extends Service implements DataOperator {
      */
     private  void sendTextMsg(final byte head, final String msg)
     {
+        Intent it=new Intent(NOTICE_TYPE_GETTED_MSG);
+        it.putExtra("json","发送的消息：\n"+msg);
+        sendBroadcast(it);
         new Thread(new Runnable() {
             @Override
             public void run() {
