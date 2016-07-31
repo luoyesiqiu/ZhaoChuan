@@ -46,7 +46,6 @@ import java.util.List;
  * Created by zyw on 2016/5/18.
  */
 public class RemoteListFragment extends Fragment {
-
     private RecyclerView recyclerView;
     private FloatingActionButton pasteFloatButton;
     private Context context;
@@ -108,7 +107,7 @@ public class RemoteListFragment extends Fragment {
                     try {
                         //发送发送文件命令，传进去一个远程的目录+文件名
                         //本地到远程
-                        if(!application.isCopyFromLocal()) {
+                        if(application.isCopyFromLocal()) {
                             if (LocalListFragment.willSendFilePath != null) {
                                 SessionActivity.tcpService.sendSendFileMsg(curPath.toString() + File.separator + LocalListFragment.willSendFilePath.getName());
                                 SessionActivity.tcpService.sendFile(LocalListFragment.willSendFilePath);
@@ -120,7 +119,8 @@ public class RemoteListFragment extends Fragment {
                         {
                             if(RemoteListFragment.willSendFilePath!=null)
                             {
-                                SessionActivity.tcpService.sendCopyFileMsg(RemoteListFragment.willSendFilePath.getAbsolutePath(),curPath.getAbsolutePath());
+                                SessionActivity.tcpService.sendCopyFileMsg(RemoteListFragment.willSendFilePath.getAbsolutePath()
+                                        ,curPath.getAbsolutePath()+File.separator+RemoteListFragment.willSendFilePath.getName());
                             }
                         }
                     } catch (IOException e) {
@@ -234,11 +234,9 @@ public class RemoteListFragment extends Fragment {
                                                         {
                                                             try {
                                                                 SessionActivity.thiz.tcpService.sendRenameFileMsg(finalSelectedPath.getAbsolutePath(),new File(finalSelectedPath.getAbsolutePath()).getParent()+File.separator+text);
-
                                                             } catch (IOException e) {
                                                                 e.printStackTrace();
                                                             }
-                                                           // fileListAdapter.notifyDataSetChanged();
                                                         }else
                                                         {
                                                             showToast("重命名失败");
@@ -283,7 +281,7 @@ public class RemoteListFragment extends Fragment {
 
 
     /**
-     * 广播接收者，这里主要是为了更新UI
+     * 广播接收者，这里主要是为了更新UI(列表)
      */
     BroadcastReceiver broadcastReceiver=new BroadcastReceiver() {
         @Override

@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.zyw.zhaochuan.ThisApplication;
 import com.zyw.zhaochuan.activity.SessionActivity;
@@ -306,6 +307,7 @@ public  class TcpService extends Service implements DataOperator {
                         Utils.copyFile(file,newFile,null);//同端之间复制文件
 
                     } catch (Exception e) {
+                        System.out.println("远端试图执行复制文件失败："+e.toString());
                         e.printStackTrace();
                     }
                     sendContent();
@@ -366,7 +368,7 @@ public  class TcpService extends Service implements DataOperator {
 
     private  class SocketServerThread extends SocketThread {
         private ServerSocket serverSocket;
-
+        private  boolean isCanCreateThread=true;//标记是否可以创建线程，巧妙解决多任务传输
         private int port;
         public SocketServerThread(int port){
             // TODO Auto-generated constructor stub
@@ -375,7 +377,7 @@ public  class TcpService extends Service implements DataOperator {
         @Override
         public void run() {
             // TODO Auto-generated method stub
-            byte dataType=-1;
+
             try {
                 serverSocket=new ServerSocket(port);
             } catch (IOException e) {
@@ -384,50 +386,60 @@ public  class TcpService extends Service implements DataOperator {
             }
                 while(isServer)
                 {
-                    try {
-                    socket=serverSocket.accept();
-                    out=socket.getOutputStream();
-                    in=socket.getInputStream();
-                    DataInputStream dataInputStream=new DataInputStream(in);
-                        dataType=dataInputStream.readByte();
-                        if(dataType==DATA_TYPE_CHAR){
-                            //字符流
-                            runCmd();
-                        }else if(dataType==DATA_TYPE_BYTE){
-                            saveFile(new File(getSaveFilePath()));
-                        }
-                    }catch (Exception e)
-                    {
-                        e.printStackTrace();
+                    if(!isCanCreateThread)
                         continue;
-                    }finally {
-                        if(socket!=null)
-                        {
-                            if(in!=null) {
-                                try {
-                                    in.close();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                isCanCreateThread=false;
+                                socket=serverSocket.accept();
+                                isCanCreateThread=true;
+                                out=socket.getOutputStream();
+                                in=socket.getInputStream();
+                                byte dataType=-1;
+                                DataInputStream dataInputStream=new DataInputStream(in);
+                                dataType=dataInputStream.readByte();
+                                if(dataType==DATA_TYPE_CHAR){
+                                    //字符流
+                                    runCmd();
+                                }else if(dataType==DATA_TYPE_BYTE){
+                                    saveFile(new File(getSaveFilePath()));
                                 }
-                            }
-                            if(out!=null) {
-                                try {
-                                    out.close();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            if(socket!=null) {
-                                try {
-                                    socket.close();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    }
 
-                }
+
+                            }catch (Exception e)
+                            {
+                                e.printStackTrace();
+                            }finally {
+                                if(socket!=null)
+                                {
+                                    if(in!=null) {
+                                        try {
+                                            in.close();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    if(out!=null) {
+                                        try {
+                                            out.close();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    if(socket!=null) {
+                                        try {
+                                            socket.close();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                        }
+                        }
+                    }).start();
+        }
         }
 
         public void close() throws IOException {

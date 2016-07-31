@@ -275,7 +275,7 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
                                         RemoteListFragment.willSendFilePath=null;
                                         willSendFilePath= finalSelectedPath;
                                         Toast.makeText(SessionActivity.thiz,willSendFilePath.getAbsolutePath(),Toast.LENGTH_LONG).show();
-                                        application.setCopyFromLocal(true);//标记已复制
+                                        application.setCopyFromLocal(true);//标记已复制，是本地复制
                                         break;
                                     case 1:
                                         //重命名
