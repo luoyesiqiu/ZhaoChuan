@@ -6,6 +6,9 @@ package com.zyw.zhaochuan.interfaces;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * 数据操作接口，TcpService实现它
+ */
 public interface DataOperator {
 
     /**

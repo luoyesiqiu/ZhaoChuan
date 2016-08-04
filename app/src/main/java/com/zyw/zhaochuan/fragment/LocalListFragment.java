@@ -62,7 +62,7 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
     final String SD_PATH= Environment.getExternalStorageDirectory().getAbsolutePath();
     private File[] files;
     private  View rootView =null;
-    private File curPath;
+    public static File curPath;//当前显示的目录，一定是目录
     private Toast toast;
      static List<FileListItem> fileListItemsCache;
     final String TAG="LocalListFragment";
@@ -270,52 +270,47 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
             }
             else if (files[pos-1].isFile())//文件。
             {
+                selectedPath=files[pos-1];
                 isFileItem=true;
             }
             final File finalSelectedPath = selectedPath;
-            //判段生成数组
-            String[] menuArr= isFileItem? getResources().getStringArray(R.array.menu_item_file):getResources().getStringArray(R.array.menu_item_folder);
+            //根据长按的项目，判段生成数组
+            final String[] menuArr= isFileItem? getResources().getStringArray(R.array.menu_item_file):getResources().getStringArray(R.array.menu_item_folder);
             final boolean finalIsFileItem = isFileItem;
             Dialog dialog = new AlertDialog.Builder(rootAct)
                     .setItems(menuArr, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            switch (which) {
-                                case 0:
-                                    //如果是文件，它是发送；如果是文件夹，它是重命名。
-                                    if(finalIsFileItem)
-                                    {
-
-                                    }else
-                                    {
-                                        rename(finalSelectedPath);
+                            switch (menuArr[which]) {// /Java7新特性，switch判断字符串
+                                case "发送":
+                                    //如果是文件，它是发送
+                                    try {
+                                        //空判断
+                                        String remoteFilePath=RemoteListFragment.curPath==null?"/sdcard":RemoteListFragment.curPath.getAbsolutePath();
+                                        //通知对方该存文件在哪
+                                        SessionActivity.tcpService.sendSendFileMsg(remoteFilePath+File.separator+finalSelectedPath.getName());
+                                        //发送文件
+                                        SessionActivity.tcpService.sendFile(finalSelectedPath);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
                                     }
                                     break;
 
-                                case 1:
-                                    //如果是文件，它是复制；如果是文件夹，它是删除。
-                                    if(finalIsFileItem)
-                                    {
-                                        //复制本地的了，远程的路径清空
-                                        RemoteListFragment.willSendFilePath=null;
-                                        willSendFilePath= finalSelectedPath;
-                                        Toast.makeText(SessionActivity.thiz,willSendFilePath.getAbsolutePath(),Toast.LENGTH_LONG).show();
-                                        application.setCopyFromLocal(true);//标记已复制，是本地复制
-                                    }else
-                                    {
-                                        Utils.deleteFile(finalSelectedPath);
-                                        loadList(curPath,false);
-                                        fileListAdapter.notifyDataSetChanged();
-                                    }
-
+                                case "复制":
+                                    //复制文件
+                                    //复制本地的了，远程的路径清空
+                                    RemoteListFragment.willSendFilePath=null;
+                                    willSendFilePath= finalSelectedPath;
+                                    Toast.makeText(SessionActivity.thiz,willSendFilePath.getAbsolutePath(),Toast.LENGTH_LONG).show();
+                                    application.setCopyFromLocal(true);//标记已复制，是本地复制
                                     break;
-                                case 2:
-                                    //文件，重命名
+                                case "重命名":
+                                    //重命名
                                     rename(finalSelectedPath);
                                     break;
 
-                                case 3:
-                                    //文件，删除
+                                case "删除":
+                                    //删除文件或文件夹
                                     Utils.deleteFile(finalSelectedPath);
                                     loadList(curPath,false);
                                     fileListAdapter.notifyDataSetChanged();

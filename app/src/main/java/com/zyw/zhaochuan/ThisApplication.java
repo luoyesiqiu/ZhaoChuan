@@ -3,6 +3,11 @@ package com.zyw.zhaochuan;
 import android.app.Application;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Environment;
+
+import com.zyw.zhaochuan.util.Utils;
+
+import java.io.File;
 
 /**
  * Created by zyw on 2016/7/23.
@@ -55,6 +60,10 @@ public class ThisApplication extends Application {
         pptFileBmp=BitmapFactory.decodeResource(getResources(),R.mipmap.ppt_file);
         excelFileBmp =BitmapFactory.decodeResource(getResources(),R.mipmap.excel_file);
         wordFileBmp=BitmapFactory.decodeResource(getResources(),R.mipmap.word_file);
+
+        File logFile=new File(Environment.getExternalStorageDirectory().getAbsoluteFile()+"zhaochuan.txt");//删除日志
+        if(logFile.exists())
+            logFile.delete();
     }
     public String getFileRoot()
     {

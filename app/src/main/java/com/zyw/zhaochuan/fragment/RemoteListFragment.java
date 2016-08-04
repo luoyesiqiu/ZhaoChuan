@@ -53,7 +53,7 @@ public class RemoteListFragment extends Fragment {
     private List<FileListItem> fileListItems;
     private ProgressDialog progressDialog;
     private  View rootView =null;
-    private File curPath=null;
+    public  static File curPath=null;
     private Toast toast;
    private FileListParser.RFile[] files;
     final String TAG="RemoteListFragment";
