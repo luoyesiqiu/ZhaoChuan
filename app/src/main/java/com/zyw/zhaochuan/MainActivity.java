@@ -18,13 +18,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 
-import com.zyw.zhaochuan.activity.CaptureActivity;
+import com.zyw.zhaochuan.activity.CaptureConnectQRActivity;
 import com.zyw.zhaochuan.activity.SessionActivity;
 import com.zyw.zhaochuan.activity.SettingActivity;
 import com.zyw.zhaochuan.activity.ShareActivity;
 import com.zyw.zhaochuan.util.Utils;
 import com.zyw.zhaochuan.wifi.WifiAP;
-import com.zyw.zhaochuan.wifi.WifiConnector;
 
 import cn.bmob.v3.Bmob;
 
@@ -84,14 +83,14 @@ public class MainActivity extends AppCompatActivity
                 case R.id.main_bn_connect:
                     //是否打开wifi
                     if(wifiManager.isWifiEnabled()){
-                     intent=new Intent(MainActivity.this,CaptureActivity.class);
+                     intent=new Intent(MainActivity.this,CaptureConnectQRActivity.class);
                     startActivity(intent);
                     }
                     else{
                         //Snackbar.make(navigationView,"请先打开并连接WIFI。",Snackbar.LENGTH_SHORT).show();
                         //打开wifi
                         wifiManager.setWifiEnabled(true);
-                        intent=new Intent(MainActivity.this,CaptureActivity.class);
+                        intent=new Intent(MainActivity.this,CaptureConnectQRActivity.class);
                         startActivity(intent);
                        // wifiAP.CreateWifiInfo(Utils.getRandomSSID(),Utils.getRandomKey(), WifiAP.WifiCipherType.WIFICIPHER_INVALID);
 
@@ -144,20 +143,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-
-
-        return super.onOptionsItemSelected(item);
-    }
 
     /**
      * 导航菜单被点击后

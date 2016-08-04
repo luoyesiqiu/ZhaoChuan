@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -111,7 +112,6 @@ public abstract  class WifiConnector {
 
                 //有可能是正在获取，或者已经获取了
                 Log.d(TAG, " intent is " + WifiManager.RSSI_CHANGED_ACTION);
-
 
                 if (isWifiConnected(mContext) ==WIFI_CONNECTED) {
 
@@ -271,7 +271,6 @@ public abstract  class WifiConnector {
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo wifiNetworkInfo = connectivityManager
                 .getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-
         Log.v(TAG, "isConnectedOrConnecting = " + wifiNetworkInfo.isConnectedOrConnecting());
         Log.d(TAG, "wifiNetworkInfo.getDetailedState() = " + wifiNetworkInfo.getDetailedState());
         if (wifiNetworkInfo.getDetailedState() == NetworkInfo.DetailedState.OBTAINING_IPADDR
@@ -287,6 +286,8 @@ public abstract  class WifiConnector {
 
     private WifiConfiguration isExist(String SSID) {
         List<WifiConfiguration> existingConfigs = mWifiManager.getConfiguredNetworks();
+        if(existingConfigs==null)
+            return null;
         for (WifiConfiguration existingConfig : existingConfigs) {
             if (existingConfig.SSID.equals("\"" + SSID + "\"") /*&& existingConfig.preSharedKey.equals("\"" + password + "\"")*/) {
                 return existingConfig;

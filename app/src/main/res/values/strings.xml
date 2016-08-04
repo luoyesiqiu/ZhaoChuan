@@ -3,7 +3,7 @@
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="welcome">未登录</string>
+    <string name="welcome">欢迎使用赵传文件传输软件</string>
     <string name="create_connect">创建连接</string>
     <string name="connect_to">连接到</string>
     <string name="show_text_scan_qr">扫描以下二维码连接我</string>

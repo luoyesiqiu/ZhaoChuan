@@ -9,7 +9,10 @@ import com.zyw.zhaochuan.interfaces.OnTransProgressChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -210,6 +213,35 @@ public class Utils {
     {
 
      return generateShortUuid();
+    }
+
+    /***
+     *格式化时间
+     * @param time
+     * @return
+     */
+    public static String getFormatedDate(long time)
+    {
+        //String nowStr;
+        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        Date curDate = new Date(time);//获取当前时间
+        return  sdf.format(curDate);//转换时间格式
+
+    }
+
+    public  static  void writeLogToSdcard(String log)
+    {
+        try {
+            FileWriter fw =new FileWriter("/sdcard/zhaochuan.txt",true);
+            fw.write("\n\n");
+            fw.write(getFormatedDate(System.currentTimeMillis())+"\n");
+            fw.write(log);
+            if(fw!=null)
+                fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

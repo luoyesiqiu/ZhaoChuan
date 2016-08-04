@@ -208,7 +208,7 @@ public class RemoteListFragment extends Fragment {
                 }
                 final FileListParser.RFile finalSelectedPath = selectedPath;
                 Dialog dialog = new AlertDialog.Builder(rootAct)
-                        .setItems(R.array.menu_item, new DialogInterface.OnClickListener() {
+                        .setItems(R.array.menu_item_file, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 switch (which) {

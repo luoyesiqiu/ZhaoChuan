@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.AssetFileDescriptor;
@@ -13,6 +14,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.net.DhcpInfo;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,16 +32,18 @@ import com.zyw.zhaochuan.camera.CameraManager;
 import com.zyw.zhaochuan.decoding.CaptureActivityHandler;
 import com.zyw.zhaochuan.decoding.InactivityTimer;
 import com.zyw.zhaochuan.parser.ConnectQRBodyParser;
+import com.zyw.zhaochuan.util.Utils;
 import com.zyw.zhaochuan.view.ViewfinderView;
+import com.zyw.zhaochuan.wifi.WifiAutoConnectManager;
 import com.zyw.zhaochuan.wifi.WifiConnector;
 
 import org.json.JSONException;
 
 /**
  * @author zyw
- *扫描二维码界面
+ *扫描连接二维码界面
  */
-public class CaptureActivity extends Activity implements Callback
+public class CaptureConnectQRActivity extends Activity implements Callback
 {
 	private CaptureActivityHandler handler;
 	private ViewfinderView viewfinderView;
@@ -184,68 +188,63 @@ public class CaptureActivity extends Activity implements Callback
         ConnectQRBodyParser qrBodyParser = null;
         try {
             qrBodyParser = new ConnectQRBodyParser(text);
-			//设置根目录
+			//根据平台设置根目录
 			String root=qrBodyParser.isPC()?"":"/sdcard";
 			((ThisApplication)getApplication()).setFileRoot(root);
 
 			//==================================================================
 			if(!qrBodyParser.isAsAP()) {
 				//如果扫到对方不是Ap
-				Intent intentAct = new Intent(CaptureActivity.this, SessionActivity.class);
+				Intent intentAct = new Intent(CaptureConnectQRActivity.this, SessionActivity.class);
 				intentAct.setAction(SessionActivity.ACTION_SHOW_SESSION);
-				intentAct.putExtra("remote_ip", qrBodyParser.getIp());
+				intentAct.putExtra("remote_ip", qrBodyParser.getIp());//远程ip
 				intentAct.putExtra("isServer", false);
 				startActivity(intentAct);
 				finish();
-			}else
-			{
-				//如果扫到对方是Ap,连接WIfI，并获取Ip
+			}else {
+
+				//如果扫到对方是Ap,连接WIfI，并获取Ip----------------------------------------------------------
 				final ConnectQRBodyParser finalQrBodyParser = qrBodyParser;
-				final WifiConnector wifiConnector=new WifiConnector(getApplicationContext()){
 
-					@Override
-					public Intent myRegisterReceiver(BroadcastReceiver receiver, IntentFilter filter) {
-						CaptureActivity.this.registerReceiver(receiver, filter);
-						return null;
+				WifiManager wifiManager=(WifiManager)getSystemService(Context.WIFI_SERVICE);
+				WifiAutoConnectManager wifiAutoConnectManager=new WifiAutoConnectManager(wifiManager);
+				wifiAutoConnectManager.connect(finalQrBodyParser.getSsid(),qrBodyParser.getKey(), WifiAutoConnectManager.WifiCipherType.WIFICIPHER_WPA);
+				Toast.makeText(getApplication(), "正在连接对方手机，请稍等。。。", Toast.LENGTH_LONG).show();
+				int i=0;
+				boolean isSuccess=false;//判断是否连上了
+				while (i++<=3000)
+				{
+					String ssid=wifiManager.getConnectionInfo().getSSID();
+					if(ssid!=null) {
+						//判断ssid和网关ip是否正确。
+						if(ssid.contains(finalQrBodyParser.getSsid())&&wifiManager.getDhcpInfo().gateway!=0)
+						{
+							isSuccess=true;
+							break;
+						}
 					}
-
-					@Override
-					public void myUnregisterReceiver(BroadcastReceiver receiver) {
-						CaptureActivity.this.unregisterReceiver(receiver);
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
-
-					/**
-					 * Wifi已连接
-					 * @param wifiManager
-                     */
-					@Override
-					public void onNotifyWifiConnected(WifiManager wifiManager) {
-						DhcpInfo dhcpInfo=wifiManager.getDhcpInfo();
-						Intent intentAct = new Intent(CaptureActivity.this, SessionActivity.class);
-						intentAct.setAction(SessionActivity.ACTION_SHOW_SESSION);
-						intentAct.putExtra("remote_ip", finalQrBodyParser.getIp());
-						intentAct.putExtra("isServer", false);
-						startActivity(intentAct);
-						finish();
-
-						onPause();
-						onResume();//刷新
-					}
-
-					/**
-					 * wifi连接失败
-					 */
-					@Override
-					public void onNotifyWifiConnectFailed() {
-						onPause();
-						onResume();//刷新
-					}
-				};
-				//打开Wifi
-				wifiConnector.openWifi();
-				wifiConnector.addNetwork(wifiConnector.createWifiInfo(qrBodyParser.getSsid(), qrBodyParser.getKey(), WifiConnector.TYPE_WPA));
-
-
+				}
+				//判断是否成功
+				if(isSuccess) {
+					DhcpInfo dhcpInfo = wifiManager.getDhcpInfo();
+					//Toast.makeText(getApplication(), "网关："+dhcpInfo.gateway, Toast.LENGTH_LONG).show();
+					Utils.writeLogToSdcard(Utils.int2Ip(dhcpInfo.gateway));
+					Intent intentAct = new Intent(CaptureConnectQRActivity.this, SessionActivity.class);
+					intentAct.setAction(SessionActivity.ACTION_SHOW_SESSION);
+					intentAct.putExtra("remote_ip", Utils.int2Ip(dhcpInfo.gateway));
+					intentAct.putExtra("isServer", false);
+					startActivity(intentAct);
+					finish();
+				}else {
+					Toast.makeText(getApplicationContext(),"连接失败，请重试。",Toast.LENGTH_LONG).show();
+					onPause();
+					onResume();//刷新
+				}
 			}
         } catch (JSONException e) {
             Toast.makeText(getApplicationContext(),getResources().getString(R.string.qr_error),Toast.LENGTH_LONG).show();
@@ -253,6 +252,7 @@ public class CaptureActivity extends Activity implements Callback
 			onResume();//刷新
             e.printStackTrace();
         }
+
 
 	}
 

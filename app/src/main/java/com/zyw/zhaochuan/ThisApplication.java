@@ -12,6 +12,24 @@ public class ThisApplication extends Application {
     private  String fileRoot;
     private  int appPort;
 
+    public String getLocalIP() {
+        return localIP;
+    }
+
+    public void setLocalIP(String localIP) {
+        this.localIP = localIP;
+    }
+
+    public String getRemoteIP() {
+        return remoteIP;
+    }
+
+    public void setRemoteIP(String remoteIP) {
+        this.remoteIP = remoteIP;
+    }
+
+    private String localIP;
+    private String remoteIP;
     public boolean isCopyFromLocal() {
         return isCopyFromLocal;
     }

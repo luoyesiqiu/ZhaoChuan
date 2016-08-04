@@ -250,12 +250,14 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
         @Override
         public void onItemLongClick(View view, final int pos) {
 
+            boolean isFileItem=false;
             File selectedPath=null;
             if (pos == 0 && !curPath.toString().equals("/"))
             {
                 return;
             }
-            else if ((pos == 0 && curPath.toString().equals("/")) || files[pos-1].isDirectory()|| !files[pos-1].isDirectory()) {
+            else if ((pos == 0 && curPath.toString().equals("/")) || files[pos-1].isDirectory()) //是目录
+            {
                 if (curPath.toString().equals("/"))
                 {
                     selectedPath =files[pos];
@@ -264,60 +266,98 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
                 {
                     selectedPath =files[pos-1];
                 }
-                final File finalSelectedPath = selectedPath;
-                Dialog dialog = new AlertDialog.Builder(rootAct)
-                        .setItems(R.array.menu_item, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                switch (which) {
-                                    case 0:
+                isFileItem=false;
+            }
+            else if (files[pos-1].isFile())//文件。
+            {
+                isFileItem=true;
+            }
+            final File finalSelectedPath = selectedPath;
+            //判段生成数组
+            String[] menuArr= isFileItem? getResources().getStringArray(R.array.menu_item_file):getResources().getStringArray(R.array.menu_item_folder);
+            final boolean finalIsFileItem = isFileItem;
+            Dialog dialog = new AlertDialog.Builder(rootAct)
+                    .setItems(menuArr, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            switch (which) {
+                                case 0:
+                                    //如果是文件，它是发送；如果是文件夹，它是重命名。
+                                    if(finalIsFileItem)
+                                    {
+
+                                    }else
+                                    {
+                                        rename(finalSelectedPath);
+                                    }
+                                    break;
+
+                                case 1:
+                                    //如果是文件，它是复制；如果是文件夹，它是删除。
+                                    if(finalIsFileItem)
+                                    {
                                         //复制本地的了，远程的路径清空
                                         RemoteListFragment.willSendFilePath=null;
                                         willSendFilePath= finalSelectedPath;
                                         Toast.makeText(SessionActivity.thiz,willSendFilePath.getAbsolutePath(),Toast.LENGTH_LONG).show();
                                         application.setCopyFromLocal(true);//标记已复制，是本地复制
-                                        break;
-                                    case 1:
-                                        //重命名
-                                        final EditText editText=new EditText(context);
-                                        editText.setText(finalSelectedPath.getName());
-                                        AlertDialog alertDialog=new AlertDialog.Builder(context)
-                                                .setTitle("重命名")
-                                                .setView(editText)
-                                                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                                    @Override
-                                                    public void onClick(DialogInterface dialog, int which) {
-                                                        String text=editText.getText().toString();
-                                                        if(!text.equals(""))
-                                                        {
-                                                            finalSelectedPath.renameTo(new File(finalSelectedPath.getParent()+File.separator+text));
-                                                            loadList(curPath,false);
-                                                            fileListAdapter.notifyDataSetChanged();
-                                                        }else
-                                                        {
-                                                            showToast("重命名失败");
-                                                        }
-                                                    }
-                                                })
-                                                .create();
-                                        alertDialog.show();
-                                        break;
-
-                                    case 2:
-                                    //删除
+                                    }else
+                                    {
                                         Utils.deleteFile(finalSelectedPath);
                                         loadList(curPath,false);
                                         fileListAdapter.notifyDataSetChanged();
-                                        break;
-                                }
+                                    }
+
+                                    break;
+                                case 2:
+                                    //文件，重命名
+                                    rename(finalSelectedPath);
+                                    break;
+
+                                case 3:
+                                    //文件，删除
+                                    Utils.deleteFile(finalSelectedPath);
+                                    loadList(curPath,false);
+                                    fileListAdapter.notifyDataSetChanged();
+                                    break;
                             }
-                        })
-                        .create();
-                dialog.show();
-            }
+                        }
+                    })
+                    .create();
+            dialog.show();
         }
 
     }
+
+    /**
+     * 重命名
+     */
+    private void rename(final File oldName)
+    {
+        final EditText editText=new EditText(context);
+        editText.setText(oldName.getName());
+        AlertDialog alertDialog=new AlertDialog.Builder(context)
+                .setTitle("重命名")
+                .setView(editText)
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String text=editText.getText().toString();
+                        if(!text.equals(""))
+                        {
+                            oldName.renameTo(new File(oldName.getParent()+File.separator+text));
+                            loadList(curPath,false);
+                            fileListAdapter.notifyDataSetChanged();
+                        }else
+                        {
+                            showToast("重命名失败");
+                        }
+                    }
+                })
+                .create();
+        alertDialog.show();
+    }
+
 
     /**
      * 返回上一级目录，有ui操作

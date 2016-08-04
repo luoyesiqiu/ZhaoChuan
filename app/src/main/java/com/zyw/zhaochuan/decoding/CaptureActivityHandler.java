@@ -18,7 +18,7 @@ package com.zyw.zhaochuan.decoding;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;
-import com.zyw.zhaochuan.activity.CaptureActivity;
+import com.zyw.zhaochuan.activity.CaptureConnectQRActivity;
 import com.zyw.zhaochuan.R;
 import com.zyw.zhaochuan.camera.CameraManager;
 import com.zyw.zhaochuan.view.ViewfinderResultPointCallback;
@@ -43,7 +43,7 @@ public final class CaptureActivityHandler extends Handler {
 
   private static final String TAG = CaptureActivityHandler.class.getSimpleName();
 
-  private final CaptureActivity activity;
+  private final CaptureConnectQRActivity activity;
   private final DecodeThread decodeThread;
   private State state;
 
@@ -53,8 +53,8 @@ public final class CaptureActivityHandler extends Handler {
     DONE
   }
 
-  public CaptureActivityHandler(CaptureActivity activity, Vector<BarcodeFormat> decodeFormats,
-      String characterSet) {
+  public CaptureActivityHandler(CaptureConnectQRActivity activity, Vector<BarcodeFormat> decodeFormats,
+                                String characterSet) {
     this.activity = activity;
     decodeThread = new DecodeThread(activity, decodeFormats, characterSet,
         new ViewfinderResultPointCallback(activity.getViewfinderView()));

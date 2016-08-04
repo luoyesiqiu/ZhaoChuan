@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
 import android.view.MenuItem;
 
 import com.zyw.zhaochuan.R;
@@ -26,15 +27,28 @@ public class ShareActivity extends AppCompatActivity {
         transaction.replace(R.id.frag_container,new ShareFileListFragment());
         transaction.commit();
     }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.share_menu, menu);
+        return true;
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
+      final  int id=item.getItemId();
         //按下左上角的返回键
-        if(item.getItemId()==android.R.id.home)
+        if(id==android.R.id.home)
         {
             finish();
         }
+        //下载
+        else if(id==R.id.share_download)
+        {
+
+        }
+
         return super.onOptionsItemSelected(item);
     }
 }

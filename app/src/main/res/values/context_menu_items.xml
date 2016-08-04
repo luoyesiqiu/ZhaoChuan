@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <array name="menu_item">
+    <array name="menu_item_file">
+        <item>发送</item>
         <item>复制</item>
         <item>重命名</item>
         <item>删除</item>
     </array>
-
+    <array name="menu_item_folder">
+        <item>重命名</item>
+        <item>删除</item>
+    </array>
 </resources>

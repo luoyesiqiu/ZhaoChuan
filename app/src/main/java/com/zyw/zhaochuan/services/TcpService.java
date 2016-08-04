@@ -100,7 +100,6 @@ public  class TcpService extends Service implements DataOperator {
     private  final int BUFFER_SIZE=8192;
     private OnTransProgressChangeListener onTransProgressChangeListener;
 
-
     public void setOnTransProgressChangeListener(OnTransProgressChangeListener onTransProgressChangeListener)
     {
         this.onTransProgressChangeListener=onTransProgressChangeListener;
@@ -180,6 +179,7 @@ public  class TcpService extends Service implements DataOperator {
     public void setRemoteRequestRoot(String remoteRequestRoot) {
         this.remoteRequestRoot = remoteRequestRoot;
     }
+
     public String getSaveFilePath() {
         return saveFilePath;
     }
@@ -198,8 +198,10 @@ public  class TcpService extends Service implements DataOperator {
         serverThread.start();
     }
 
-    /**
+    /*
+    * ************************************************************
      * Socket父类
+     ************************************************************
      */
     public abstract class SocketThread extends Thread
     {
@@ -316,9 +318,16 @@ public  class TcpService extends Service implements DataOperator {
             //客户端连接上
             else if(cmd.contains(REQUEST_TYPE_CONNECTED))
             {
-                String ip=socket.getInetAddress().getHostAddress();
-                remoteHost= ip.toString();
-                noticeClientConnected();//给界面发送通知
+//                String ip=socket.getInetAddress().getHostAddress();
+//                remoteHost= ip.toString();
+                try {
+                    String remoteIP=json.getString("local_ip");//将对方的ip存为自己的ip
+                    remoteHost=remoteIP;
+                    noticeClientConnected();//给界面发送通知
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
             }
             //断开连接
             else if(cmd.contains(REQUEST_TYPE_DISCONNECT))
@@ -331,9 +340,9 @@ public  class TcpService extends Service implements DataOperator {
     }
 
 
-    /**
+    /**************************************************************
      * 关闭服务
-     */
+     **************************************************************/
     public void close()
     {
         isServer=false;
@@ -362,10 +371,11 @@ public  class TcpService extends Service implements DataOperator {
     }
 
 
-    /**
-     *服务器的线程=====================
-     */
-
+    /*
+    * **********************************************************************
+     *服务器的线程
+     * *******************************************************************
+     * */
     private  class SocketServerThread extends SocketThread {
         private ServerSocket serverSocket;
         private  boolean isCanCreateThread=true;//标记是否可以创建线程，巧妙解决多任务传输
@@ -387,14 +397,14 @@ public  class TcpService extends Service implements DataOperator {
                 while(isServer)
                 {
                     if(!isCanCreateThread)
-                        continue;
+                        continue;//如果有一个线程在等待，那么就不创建新线程
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try {
-                                isCanCreateThread=false;
+                                isCanCreateThread=false;//标记不能创建新线程
                                 socket=serverSocket.accept();
-                                isCanCreateThread=true;
+                                isCanCreateThread=true;//这个线程有连接进入了，不等待了，另外的一个线程可以创建线程了
                                 out=socket.getOutputStream();
                                 in=socket.getInputStream();
                                 byte dataType=-1;
@@ -403,11 +413,9 @@ public  class TcpService extends Service implements DataOperator {
                                 if(dataType==DATA_TYPE_CHAR){
                                     //字符流
                                     runCmd();
-                                }else if(dataType==DATA_TYPE_BYTE){
+                                }else if(dataType==DATA_TYPE_BYTE) {
                                     saveFile(new File(getSaveFilePath()));
                                 }
-
-
                             }catch (Exception e)
                             {
                                 e.printStackTrace();
@@ -686,11 +694,9 @@ public  class TcpService extends Service implements DataOperator {
      */
     @Override
     public   void noticeClientConnected() {
-
         Intent intent=new Intent();
         intent.setAction(NOTICE_TYPE_CLIENT_CONTENTED);
         sendBroadcast(intent);
-
         //给客户端发目录
     }
 
@@ -708,11 +714,12 @@ public  class TcpService extends Service implements DataOperator {
     @Override
     /**
      * 发送请求连接请求
+     * remote_ip，对方的ip。对方收到这个命令后，就会把自己的remote_ip存入local_ip
+     * local_ip，本地的ip。对方收到这个命令后，就会把自己的local_ip存入remote_ip(未定)
      */
     public void sendConnectedMsg() throws IOException{
         WifiManager wifiManager=(WifiManager) getSystemService(Context.WIFI_SERVICE);
         final String msg=String.format("{\"command\":\"%s\",\"remote_ip\":\"%s\",\"local_ip\":\"%s\"}", REQUEST_TYPE_CONNECTED,remoteHost, Utils.getIpAddress(wifiManager));
-
         sendTextMsg(DATA_TYPE_CHAR,msg);
     }
 

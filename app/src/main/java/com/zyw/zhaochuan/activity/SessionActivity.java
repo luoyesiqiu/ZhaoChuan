@@ -28,6 +28,7 @@ import com.zyw.zhaochuan.fragment.SessionFragment;
 import com.zyw.zhaochuan.fragment.ShowConnectQRFragment;
 import com.zyw.zhaochuan.interfaces.OnTransProgressChangeListener;
 import com.zyw.zhaochuan.services.TcpService;
+import com.zyw.zhaochuan.util.Utils;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -132,34 +133,12 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
             //收到目录，测试用
             else if(intent.getAction().equals(TcpService.NOTICE_TYPE_GETTED_MSG)) {
                 String json=intent.getStringExtra("json");
-                try {
-                    FileWriter fw =new FileWriter("/sdcard/zhaochuan.txt",true);
-                    fw.write("\n\n");
-                    fw.write(getFormatedDate(System.currentTimeMillis())+"\n");
-                    fw.write(json);
-                    if(fw!=null)
-                    fw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                Utils.writeLogToSdcard(json);
             }
         }
     };
 
-    /***
-     *格式化时间
-     * @param time
-     * @return
-     */
-    public String getFormatedDate(long time)
-    {
-        //String nowStr;
-        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        Date curDate = new Date(time);//获取当前时间
-        return  sdf.format(curDate);//转换时间格式
-
-    }
     /**
      * 监听Activity与Service关联情况
      */

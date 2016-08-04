@@ -9,12 +9,14 @@ import android.view.ViewGroup;
 
 /**
  * Created by zyw on 2016/7/24.
+ * 扫描分享文件的fragment
  */
-public class ShowShareQRFragment extends Fragment {
+public class CaptureShareQRFragment extends Fragment {
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+
         return super.onCreateView(inflater, container, savedInstanceState);
     }
 }
