@@ -203,15 +203,14 @@ public class CaptureConnectQRActivity extends Activity implements Callback
 				finish();
 			}else {
 
-				//如果扫到对方是Ap,连接WIfI，并获取Ip----------------------------------------------------------
+				//如果扫到对方是Ap,连接WIfI，并获取Ip-----------------------------------------------
 				final ConnectQRBodyParser finalQrBodyParser = qrBodyParser;
-
 				WifiManager wifiManager=(WifiManager)getSystemService(Context.WIFI_SERVICE);
 				WifiAutoConnectManager wifiAutoConnectManager=new WifiAutoConnectManager(wifiManager);
 				wifiAutoConnectManager.connect(finalQrBodyParser.getSsid(),qrBodyParser.getKey(), WifiAutoConnectManager.WifiCipherType.WIFICIPHER_WPA);
 				Toast.makeText(getApplication(), "正在连接对方手机，请稍等。。。", Toast.LENGTH_LONG).show();
 				int i=0;
-				boolean isSuccess=false;//判断是否连上了
+				boolean isSuccess=false;//标记是否连上了
 				while (i++<=3000)
 				{
 					String ssid=wifiManager.getConnectionInfo().getSSID();

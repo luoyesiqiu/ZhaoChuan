@@ -74,4 +74,10 @@ public class ShowConnectQRFragment extends Fragment {
         }
     };
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if(broadcastReceiver!=null)
+        rootAct.unregisterReceiver(broadcastReceiver);
+    }
 }

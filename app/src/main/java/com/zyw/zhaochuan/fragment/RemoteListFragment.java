@@ -8,7 +8,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
@@ -73,7 +72,6 @@ public class RemoteListFragment extends Fragment {
             rootView = inflater.inflate(R.layout.file_list_layout, null);
             recyclerView = (RecyclerView) rootView.findViewById(R.id.filelist_reclyclerview);
             pasteFloatButton=(FloatingActionButton)rootView.findViewById(R.id.float_button_paste);
-
             recyclerView.setLayoutManager(new LinearLayoutManager(context));
             //添加分割线
             recyclerView.addItemDecoration(new RecycleViewDivider(context, LinearLayoutManager.VERTICAL));
@@ -112,6 +110,7 @@ public class RemoteListFragment extends Fragment {
                                 SessionActivity.tcpService.sendSendFileMsg(curPath.toString() + File.separator + LocalListFragment.willSendFilePath.getName());
                                 SessionActivity.tcpService.sendFile(LocalListFragment.willSendFilePath);
                                 LocalListFragment.willSendFilePath = null;//粘贴了就为空
+                               // 此句不能加;sendGetContentMsg(curPath.getAbsolutePath());
                             }
                         }
                         //远程到远程
@@ -193,33 +192,41 @@ public class RemoteListFragment extends Fragment {
         @Override
         public void onItemLongClick(View view, int pos) {
             FileListParser.RFile selectedPath=null;
+             boolean isFileItem=false;
             if (pos == 0 && !curPath.toString().equals("/"))
             {
-                return;
+                    return;
             }
-            else if ((pos == 0 && (curPath.toString().equals("/")||curPath.toString().equals(""))) || files[pos-1].isFile()|| !files[pos-1].isFile()) {
-                if ((curPath.toString().equals("/")||curPath.toString().equals("")))
-                {
-                    selectedPath =files[pos];
-                }
-                else
-                {
-                    selectedPath =files[pos-1];
-                }
+            else if ((pos == 0 && (curPath.toString().equals("/")||curPath.toString().equals(""))) ||!files[pos-1].isFile()) {
+                    selectedPath = files[pos-1];
+                    isFileItem=false;
+            }else if(files[pos-1].isFile()){
+                    selectedPath = files[pos - 1];
+                    isFileItem=true;
+            }
                 final FileListParser.RFile finalSelectedPath = selectedPath;
+                final String[] menuArr= isFileItem? getResources().getStringArray(R.array.remote_context_menu_item_file):getResources().getStringArray(R.array.remote_context_menu_item_folder);
                 Dialog dialog = new AlertDialog.Builder(rootAct)
-                        .setItems(R.array.menu_item_file, new DialogInterface.OnClickListener() {
+                        .setItems(menuArr, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                switch (which) {
-                                    case 0:
-                                        //复制,复制远程的了，本地的路径就被清空
-                                        LocalListFragment.willSendFilePath=null;
-                                        willSendFilePath= finalSelectedPath;
-                                        Toast.makeText(SessionActivity.thiz,willSendFilePath.getAbsolutePath(),Toast.LENGTH_LONG).show();
-                                        application.setCopyFromLocal(false);//标记不是本地复制
+                                switch (menuArr[which]) {
+                                    case "传输":
+                                        try {
+                                            SessionActivity.tcpService.sendGetFileMsg(finalSelectedPath.getAbsolutePath());
+                                            SessionActivity.tcpService.setSaveFilePath(LocalListFragment.curPath.getAbsolutePath() + File.separator + finalSelectedPath.getName());
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                         break;
-                                    case 1:
+                                    case "复制":
+                                            //复制,复制远程的了，本地的路径就被清空
+                                            LocalListFragment.willSendFilePath = null;
+                                            willSendFilePath = finalSelectedPath;
+                                            Toast.makeText(SessionActivity.thiz, willSendFilePath.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                                            application.setCopyFromLocal(false);//标记不是本地复制
+                                        break;
+                                    case "重命名":
                                         //重命名
                                         final EditText editText=new EditText(context);
                                         editText.setText(finalSelectedPath.getName());
@@ -247,20 +254,19 @@ public class RemoteListFragment extends Fragment {
                                         alertDialog.show();
                                         break;
                                     //删除
-                                    case 2:
+                                    case "删除":
                                         try {
                                             SessionActivity.thiz.tcpService.sendDeleteFileMsg(finalSelectedPath.getAbsolutePath());
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }
-
                                         break;
                                 }
                             }
                         })
                         .create();
                 dialog.show();
-            }
+
         }
 
     }
@@ -294,6 +300,7 @@ public class RemoteListFragment extends Fragment {
                 files=fileListParser.getFiles();
                loadList(null,false);
                 fileListAdapter.notifyDataSetChanged();
+                if(progressDialog!=null)
                 progressDialog.hide();
             }else if(intent.getAction().equals(rootAct.NOTICE_BACKKEY_PRESS)){
                 goBack();
@@ -329,7 +336,7 @@ public class RemoteListFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         ((ViewGroup) rootView.getParent()).removeView(rootView);
-
+        //rootAct.unregisterReceiver(broadcastReceiver);
     }
 
     /**

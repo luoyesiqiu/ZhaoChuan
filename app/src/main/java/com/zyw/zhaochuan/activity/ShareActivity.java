@@ -1,5 +1,6 @@
 package com.zyw.zhaochuan.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentTransaction;
@@ -46,7 +47,8 @@ public class ShareActivity extends AppCompatActivity {
         //下载
         else if(id==R.id.share_download)
         {
-
+            Intent intent=new Intent(this,CaptureShareQRActivity.class);
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);

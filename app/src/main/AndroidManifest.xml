@@ -24,6 +24,12 @@
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:windowSoftInputMode="stateAlwaysHidden">
         </activity>
+        <activity android:name=".activity.CaptureShareQRActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:windowSoftInputMode="stateAlwaysHidden">
+        </activity>
+
         <activity android:name="com.zyw.zhaochuan.activity.SessionActivity"
             android:label="@string/show_qr_title">
         </activity>
@@ -39,6 +45,7 @@
 
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-permission android:name="android.permission.VIBRATE"/>

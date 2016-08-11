@@ -1,9 +1,12 @@
 package com.zyw.zhaochuan.fragment;
 
 import android.app.Dialog;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -29,16 +32,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.zyw.zhaochuan.R;
 import com.zyw.zhaochuan.ThisApplication;
-import com.zyw.zhaochuan.activity.SessionActivity;
+import com.zyw.zhaochuan.activity.CaptureShareQRActivity;
 import com.zyw.zhaochuan.activity.ShareActivity;
 import com.zyw.zhaochuan.adapter.FileListAdapter;
 import com.zyw.zhaochuan.entity.FileListItem;
 import com.zyw.zhaochuan.entity.FileSessionList;
+import com.zyw.zhaochuan.interfaces.CaptureCompleteCallback;
 import com.zyw.zhaochuan.interfaces.FileListInterface;
 import com.zyw.zhaochuan.interfaces.OnTransProgressChangeListener;
-import com.zyw.zhaochuan.parser.FileListParser;
 import com.zyw.zhaochuan.parser.ShareQRBodyParser;
 import com.zyw.zhaochuan.util.FileNameSort;
+import com.zyw.zhaochuan.util.IntentTool;
 import com.zyw.zhaochuan.util.QRMaker;
 import com.zyw.zhaochuan.util.Utils;
 import com.zyw.zhaochuan.view.RecycleViewDivider;
@@ -53,8 +57,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+
+import cn.bmob.v3.BmobQuery;
 import cn.bmob.v3.datatype.BmobFile;
 import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.DownloadFileListener;
+import cn.bmob.v3.listener.QueryListener;
 import cn.bmob.v3.listener.SaveListener;
 import cn.bmob.v3.listener.UpdateListener;
 import cn.bmob.v3.listener.UploadFileListener;
@@ -62,7 +71,7 @@ import cn.bmob.v3.listener.UploadFileListener;
 /**
  * Created by zyw on 2016/7/23.
  */
-public class ShareFileListFragment extends Fragment implements FileListInterface,OnTransProgressChangeListener{
+public class ShareFileListFragment extends Fragment implements FileListInterface,OnTransProgressChangeListener,CaptureCompleteCallback{
     private RecyclerView recyclerView;
     private Context context;
     private FileListAdapter fileListAdapter;
@@ -82,6 +91,13 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
     private ThisApplication application;
     private boolean isCanDownload=true;
     private ProgressDialog copyProgressDialog;
+    public static final String SHARE_CAPTURE_COMPLELED="share_capture_completed";
+    private NotificationManager notificationManager;
+    private  Notification.Builder downloadNotiBuilder;
+    private BmobFile contextFile;
+
+    boolean isUpdateSuccess=false;
+    private  String objId=null;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -146,13 +162,18 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
             copyProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
             copyProgressDialog.setMax(100);
             copyProgressDialog.setCancelable(false);
+            notificationManager=(NotificationManager)rootAct.getSystemService(Context.NOTIFICATION_SERVICE);
+            downloadNotiBuilder=new Notification.Builder(rootAct)
+                    .setTicker("文件开始下载")
+                    .setSmallIcon(R.mipmap.ic_launcher);
+            //设置扫码回调
+            CaptureShareQRActivity.setCaptureCompleteCallback(this);
         }
-        showToast("选择一个文件来上传");
+        showToast("长按可以分享文件噢~");
         rootAct.getSupportActionBar().show();//显示ActionBar
         rootAct.getSupportActionBar().setTitle(getShortPath(curPath.toString()));
         return rootView;
     }
-
     /**
      * 复制本地文件的进度
      * @param current
@@ -171,6 +192,83 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
                     copyProgressDialog.hide();
                     loadList(curPath,false);
                     fileListAdapter.notifyDataSetChanged();
+                }
+            }
+        });
+    }
+
+    /**
+     * 扫码回调
+     * @param data
+     */
+    @Override
+    public void onCaptureComplete(Map<String, String> data) {
+        String key=data.get("key");
+        String url=data.get("url");
+        String fileName=data.get("fileName");
+        System.out.println(url);
+        //开始下载
+        BmobFile bmobFile = new BmobFile();
+        bmobFile.setUrl(url);
+        bmobFile.download(new File(curPath+File.separator+fileName), new DownloadFileListener() {
+            /**
+             * 下载结果回调
+             * @param s
+             * @param e
+             */
+            @Override
+            public void done(String s, BmobException e) {
+                if (e == null) {
+                    showToast("下载完成");
+                    loadList(curPath,false);
+                } else {
+                    showToast("下载失败");
+                }
+            }
+
+            /**
+             * 进度回调
+             * @param current
+             * @param lmax
+             */
+            @Override
+            public void onProgress(Integer current, long lmax) {
+                if (current >= 100) {
+                    downloadNotiBuilder = new Notification.Builder(rootAct);
+                    downloadNotiBuilder.setSmallIcon(R.mipmap.ic_launcher);
+                    downloadNotiBuilder.setContentTitle("下载完成").setTicker("下载完成");
+                    notificationManager.notify(1, downloadNotiBuilder.getNotification());
+                    downloadNotiBuilder.setContentTitle("").setTicker("文件开始下载");//放在这里的目的是为了下次
+                } else {
+                    downloadNotiBuilder.setProgress(100, current, false).setContentTitle(String.format("文件下载中...(%s%%)", current));
+                    notificationManager.notify(1, downloadNotiBuilder.getNotification());
+                }
+            }
+        });//download
+    }
+
+    /**
+     * 添加数据到表
+     * @param file
+     * @param key
+     */
+    private  void addFileInfoToServer(BmobFile file,String key)
+    {
+        final FileSessionList fileSessionList=new FileSessionList();
+        fileSessionList.setFileKey(key);//KEY
+        fileSessionList.setFileName(file.getFilename());//文件名
+        fileSessionList.setFileSize(file.getLocalFile().length()+"");
+        fileSessionList.setFile(contextFile);
+        fileSessionList.save(new SaveListener<String>() {
+            @Override
+            public void done(String s, BmobException e) {
+
+                if(e==null){
+                    objId =s;
+                    isUpdateSuccess=true;
+                }else
+                {
+                    isUpdateSuccess=false;
                 }
             }
         });
@@ -219,111 +317,14 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
                 }
             }
 
-            //点击文件时，上传
+            //点击文件时
             else if (files[pos-1].isFile())
             {
-                if(isCanDownload) {
-                    isCanDownload=false;
-                    final File tempFile = files[pos - 1];
-                    final BmobFile f = new BmobFile(tempFile);
-                    if (uploadProgressDialog == null)
-                        uploadProgressDialog = new ProgressDialog(rootAct);
-
-                    uploadProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-                    uploadProgressDialog.setMessage(String.format("文件“%s”上传中...", tempFile.getName()));
-                    uploadProgressDialog.setCancelable(false);
-                    uploadProgressDialog.setProgress(0);
-                    uploadProgressDialog.setMax(100);
-                    uploadProgressDialog.show();
-                    f.uploadblock(new UploadFileListener() {
-                        @Override
-                        public void done(BmobException e) {
-                            isCanDownload=true;
-                            if(e==null) {
-                                showToast(String.format("文件“%s”上传完成", tempFile.getName()));
-                                LayoutInflater layoutInflater=LayoutInflater.from(rootAct);
-                              View view=  layoutInflater.inflate(R.layout.show_qr_layout,null);
-                                TextView keyTextView=(TextView)view.findViewById(R.id.show_ip_tv);
-                                TextView displayTextView=(TextView)view.findViewById(R.id.show_display_text) ;
-                                ImageView qrImageView=(ImageView)view.findViewById(R.id.show_qr_iv);
-                                String key=Utils.getFileKey(4);
-                                keyTextView.setText(key);
-                                displayTextView.setText("扫描二维码或者输入Key获取文件");
-                                ShareQRBodyParser shareQRBodyParser= null;
-                                try {
-                                    shareQRBodyParser = new ShareQRBodyParser(f.getUrl(),key);
-                                } catch (JSONException e1) {
-                                    e1.printStackTrace();
-                                }
-                                qrImageView.setImageBitmap(QRMaker.createQRImage(shareQRBodyParser.toString()));
-                               final String objId= addFileInfoToServer(f,key);
-                                AlertDialog alertDialog=new AlertDialog.Builder(rootAct)
-                                        .setView(view)
-                                        .setPositiveButton("取消分享", new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(DialogInterface dialog, int which) {
-                                                f.delete();
-                                                FileSessionList sessionList=new FileSessionList();
-                                                sessionList.setObjectId(objId);
-                                                sessionList.delete(new UpdateListener() {
-                                                    @Override
-                                                    public void done(BmobException e) {
-                                                        if(e==null)
-                                                            showToast("取消分享成功");
-                                                    }
-                                                });
-                                            }
-                                        })
-                                        .create();
-                                alertDialog.show();
-                            }
-                            else
-                            {
-                                showToast("文件上传失败");
-                                uploadProgressDialog.hide();
-                            }
-                        }
-
-                        @Override
-                        public void onProgress(Integer value) {
-
-                            uploadProgressDialog.setProgress(value);
-
-                            if (value >= 100)
-                                uploadProgressDialog.hide();
-                        }
-                    });
-                }
+                Intent intent= IntentTool.openFile(files[pos-1].getAbsolutePath());
+                startActivity(intent);
             }
         }
 
-        /**
-         * 添加数据到表
-         * @param file
-         * @param key
-         */
-        boolean isUpdateSuccess=false;
-        private  String addFileInfoToServer(BmobFile file,String key)
-        {
-
-            final FileSessionList fileSessionList=new FileSessionList();
-            fileSessionList.setFileKey(key);//KEY
-            fileSessionList.setFileName(file.getFilename());//文件名
-            fileSessionList.setFileSize(file.getLocalFile().length()+"");
-            fileSessionList.setUrl(file.getUrl());
-            fileSessionList.save(new SaveListener<String>() {
-                @Override
-                public void done(String s, BmobException e) {
-                    if(e==null){
-                        isUpdateSuccess=true;
-                    }else
-                    {
-                        isUpdateSuccess=false;
-                    }
-                }
-            });
-            return isUpdateSuccess?fileSessionList.getObjectId():null;
-        }
 
         /**
          * 列表长按事件
@@ -333,74 +334,165 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
         @Override
         public void onItemLongClick(View view, final int pos) {
 
+            boolean isFileItem=false;
             File selectedPath=null;
             if (pos == 0 && !curPath.toString().equals("/"))
             {
                 return;
             }
-            else if ((pos == 0 && curPath.toString().equals("/")) || files[pos-1].isDirectory()|| !files[pos-1].isDirectory()) {
-                if (curPath.toString().equals("/"))
-                {
-                    selectedPath =files[pos];
+            else if ((pos == 0 && curPath.toString().equals("/")) || files[pos-1].isDirectory()) {
+                if (curPath.toString().equals("/")) {
+                    selectedPath = files[pos];
+                } else {
+                    selectedPath = files[pos - 1];
                 }
-                else
-                {
-                    selectedPath =files[pos-1];
-                }
-                final File finalSelectedPath = selectedPath;
-                Dialog dialog = new AlertDialog.Builder(rootAct)
-                        .setItems(R.array.menu_item_file, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                switch (which) {
-                                    case 0:
-                                        //复制本地的了，远程的路径清空
-                                      //  RemoteListFragment.willSendFilePath=null;
-                                        willSendFilePath= finalSelectedPath;
-                                        Toast.makeText(rootAct,willSendFilePath.getAbsolutePath(),Toast.LENGTH_LONG).show();
-                                        application.setCopyFromLocal(true);
-                                        break;
-                                    case 1:
-                                        //重命名
-                                        final EditText editText=new EditText(context);
-                                        editText.setText(finalSelectedPath.getName());
-                                        AlertDialog alertDialog=new AlertDialog.Builder(context)
-                                                .setTitle("重命名")
-                                                .setView(editText)
-                                                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                                    @Override
-                                                    public void onClick(DialogInterface dialog, int which) {
-                                                        String text=editText.getText().toString();
-                                                        if(!text.equals(""))
-                                                        {
-                                                            finalSelectedPath.renameTo(new File(finalSelectedPath.getParent()+File.separator+text));
-                                                            loadList(curPath,false);
-                                                            fileListAdapter.notifyDataSetChanged();
-                                                        }else
-                                                        {
-                                                            showToast("重命名失败");
-                                                        }
-                                                    }
-                                                })
-                                                .create();
-                                        alertDialog.show();
-                                        break;
-
-                                    case 2:
-                                        //删除
-                                        Utils.deleteFile(finalSelectedPath);
-                                        loadList(curPath,false);
-                                        fileListAdapter.notifyDataSetChanged();
-                                        break;
-                                }
-                            }
-                        })
-                        .create();
-                dialog.show();
+                isFileItem=false;
+            }else if(files[pos-1].isFile()) {
+                selectedPath = files[pos - 1];
+                isFileItem=true;
             }
-        }
+            final File finalSelectedPath = selectedPath;
+            final String[] menuItem= isFileItem?getResources().getStringArray(R.array.share_context_menu_item_file):getResources().getStringArray(R.array.share_context_menu_item_folder);
+            Dialog dialog = new AlertDialog.Builder(rootAct)
+                    .setItems(menuItem, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            switch (menuItem[which]) {
+                                case "分享":
+                                    if(isCanDownload) {
+                                        isCanDownload=false;
+                                        final File tempFile = files[pos - 1];
+                                        contextFile = new BmobFile(tempFile);
+                                        if (uploadProgressDialog == null)
+                                            uploadProgressDialog = new ProgressDialog(rootAct);
 
-    }
+                                        uploadProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                                        uploadProgressDialog.setMessage(String.format("文件“%s”上传中...", tempFile.getName()));
+                                        uploadProgressDialog.setCancelable(false);
+                                        uploadProgressDialog.setProgress(0);
+                                        uploadProgressDialog.setMax(100);
+                                        uploadProgressDialog.show();
+                                        contextFile.uploadblock(new UploadFileListener() {
+                                            @Override
+                                            public void done(BmobException e) {
+                                                isCanDownload=true;
+                                                if(e==null) {
+                                                    showToast(String.format("文件“%s”上传完成", tempFile.getName()));
+                                                    LayoutInflater layoutInflater=LayoutInflater.from(rootAct);
+                                                    View view=  layoutInflater.inflate(R.layout.show_qr_layout,null);
+                                                    TextView keyTextView=(TextView)view.findViewById(R.id.show_ip_tv);
+                                                    TextView displayTextView=(TextView)view.findViewById(R.id.show_display_text) ;
+                                                    ImageView qrImageView=(ImageView)view.findViewById(R.id.show_qr_iv);
+                                                    String key=Utils.getFileKey(4);
+                                                    keyTextView.setText(key);
+                                                    displayTextView.setText("扫描二维码或者输入Key获取文件");
+                                                    addFileInfoToServer(contextFile,key);
+                                                    System.out.println("----------------->objId:"+objId);
+
+                                                    ShareQRBodyParser shareQRBodyParser= null;
+                                                    try {
+                                                        shareQRBodyParser = new ShareQRBodyParser(contextFile.getUrl(),key,contextFile.getFilename());
+                                                    } catch (JSONException e1) {
+                                                        e1.printStackTrace();
+                                                    }
+                                                    qrImageView.setImageBitmap(QRMaker.createQRImage(shareQRBodyParser.toString()));
+
+                                                    AlertDialog alertDialog=new AlertDialog.Builder(rootAct)
+                                                            .setView(view)
+                                                            .setPositiveButton("取消分享", new DialogInterface.OnClickListener() {
+                                                                @Override
+                                                                public void onClick(DialogInterface dialog, int which) {
+                                                                    contextFile.delete(new UpdateListener() {
+                                                                        @Override
+                                                                        public void done(BmobException e) {
+                                                                            if (e==null)
+                                                                                System.out.println("删除成功");
+                                                                            else
+                                                                                System.out.println("删除失败");
+                                                                        }
+                                                                    });
+                                                                    FileSessionList sessionList=new FileSessionList();
+                                                                    sessionList.setObjectId(objId);
+                                                                    sessionList.delete(new UpdateListener() {
+                                                                        @Override
+                                                                        public void done(BmobException e) {
+                                                                            if(e==null)
+                                                                                showToast("取消分享成功");
+                                                                            else
+                                                                                System.out.println("取消分享错误："+e.toString());
+                                                                        }
+                                                                    });
+                                                                }
+                                                            })
+                                                            .create();
+                                                    alertDialog.show();
+                                                }
+                                                else
+                                                {
+                                                    showToast("文件上传失败");
+                                                    uploadProgressDialog.hide();
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onProgress(Integer value) {
+
+                                                uploadProgressDialog.setProgress(value);
+
+                                                if (value >= 100)
+                                                    uploadProgressDialog.hide();
+                                            }
+                                        });
+                                    }
+
+                                break ;
+
+                                case "复制":
+                                    //复制本地的了，远程的路径清空
+                                  //  RemoteListFragment.willSendFilePath=null;
+                                    willSendFilePath= finalSelectedPath;
+                                    Toast.makeText(rootAct,willSendFilePath.getAbsolutePath(),Toast.LENGTH_LONG).show();
+                                    application.setCopyFromLocal(true);
+                                    break;
+                                case "重命名":
+                                    //重命名
+                                    final EditText editText=new EditText(context);
+                                    editText.setText(finalSelectedPath.getName());
+                                    AlertDialog alertDialog=new AlertDialog.Builder(context)
+                                            .setTitle("重命名")
+                                            .setView(editText)
+                                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    String text=editText.getText().toString();
+                                                    if(!text.equals(""))
+                                                    {
+                                                        finalSelectedPath.renameTo(new File(finalSelectedPath.getParent()+File.separator+text));
+                                                        loadList(curPath,false);
+                                                        fileListAdapter.notifyDataSetChanged();
+                                                    }else
+                                                    {
+                                                        showToast("重命名失败");
+                                                    }
+                                                }
+                                            })
+                                            .create();
+                                    alertDialog.show();
+                                    break;
+
+                                case "删除":
+                                    //删除
+                                    Utils.deleteFile(finalSelectedPath);
+                                    loadList(curPath,false);
+                                    fileListAdapter.notifyDataSetChanged();
+                                    break;
+                            }
+                        }
+                    })
+                    .create();
+            dialog.show();
+        }
+    }//
 
     /**
      * 返回上一级目录，有ui操作

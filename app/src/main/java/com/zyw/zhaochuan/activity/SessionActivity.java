@@ -2,7 +2,6 @@ package com.zyw.zhaochuan.activity;
 
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -20,6 +19,7 @@ import android.transition.Explode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 import android.widget.Toast;
 
 import com.zyw.zhaochuan.R;
@@ -30,10 +30,7 @@ import com.zyw.zhaochuan.interfaces.OnTransProgressChangeListener;
 import com.zyw.zhaochuan.services.TcpService;
 import com.zyw.zhaochuan.util.Utils;
 
-import java.io.FileWriter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Created by zyw on 2016/5/14.
@@ -53,12 +50,15 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
     private  final String TAG="SessionActivity";
     //private ProgressDialog progressDialog;
 
-
     private Notification.Builder notiBuilder;
     private NotificationManager notificationManager;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
+        }
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.fragment_container);
         thiz=this;
         intent=getIntent();
@@ -239,15 +239,20 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
     public void onProgressChange(final long current, final long max) {
         int cur=(int)((double)current/max*100);
 
-        notiBuilder.setProgress(100,cur,false).setContentTitle(String.format("文件传输中...(%s%%)",cur));
         if(current>=max)
         {
-            //notificationManager.cancel(1);
             notiBuilder=new Notification.Builder(this);
             notiBuilder.setSmallIcon(R.mipmap.ic_launcher);
             notiBuilder.setContentTitle("传输完成").setTicker("传输完成");
+            notificationManager.notify(1,notiBuilder.getNotification());
+            notiBuilder.setContentTitle("").setTicker("文件开始传输");//放在这里的目的是为了下次
+
         }
-        notificationManager.notify(1,notiBuilder.getNotification());
+        else
+        {
+            notiBuilder.setProgress(100,cur,false).setContentTitle(String.format("文件传输中...(%s%%)",cur));
+            notificationManager.notify(1,notiBuilder.getNotification());
+        }
 
     }
 }

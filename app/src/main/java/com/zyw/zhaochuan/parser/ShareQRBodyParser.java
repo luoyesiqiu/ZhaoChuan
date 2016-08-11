@@ -9,22 +9,46 @@ import org.json.JSONObject;
  */
 public class ShareQRBodyParser  {
 
-
-    public ShareQRBodyParser(String url, String key) throws JSONException {
+    public ShareQRBodyParser(String url, String key,String fileName) throws JSONException {
         this.url = url;
         this.key = key;
-        JSONObject obj=new JSONObject();
-        obj.put("url",url);
+        this.obj=new JSONObject();
+        obj.put("url", url);
         obj.put("key",key);
+        obj.put("fileName",fileName);
         json=obj.toString();
     }
+
+    public  ShareQRBodyParser(String json) throws JSONException {
+        this.json=json;
+        this.obj=new JSONObject(json);
+        this.url =obj.getString("url");
+        this.key=obj.getString("key");
+        this.fileName=obj.getString("fileName");
+    }
+
 
     @Override
     public String toString() {
         return  json;
     }
 
-    private String url;
+    public String getUrl() {
+        return url;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    private  String url;
     private  String key;
     private  String json;
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    private  String fileName;
+    private JSONObject obj;
 }

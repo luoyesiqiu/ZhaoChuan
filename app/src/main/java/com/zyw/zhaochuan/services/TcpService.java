@@ -218,7 +218,6 @@ public  class TcpService extends Service implements DataOperator {
         public void runCmd() throws IOException {
             String cmd=readCommand();
 
-
             //收到目录，测试用=================================
             Intent it=new Intent(NOTICE_TYPE_GETTED_MSG);
             it.putExtra("json","收到的消息：\n"+cmd);
@@ -420,34 +419,34 @@ public  class TcpService extends Service implements DataOperator {
                             {
                                 e.printStackTrace();
                             }finally {
-                                if(socket!=null)
-                                {
-                                    if(in!=null) {
-                                        try {
-                                            in.close();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                    if(out!=null) {
-                                        try {
-                                            out.close();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                    if(socket!=null) {
-                                        try {
-                                            socket.close();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
+                                //不能关啊
+                                //关闭客户端socket--------------------------------------------------
+                               /* if(in!=null) {
+                                    try {
+                                        in.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
                                     }
                                 }
+                                if(out!=null) {
+                                    try {
+                                        out.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                if(socket!=null) {
+                                    try {
+                                        socket.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }*/
+                                //==================================================================
                         }
                         }
                     }).start();
-        }
+                 }
         }
 
         public void close() throws IOException {
@@ -475,11 +474,13 @@ public  class TcpService extends Service implements DataOperator {
      * @param head 文本头
      * @param msg 文本消息
      */
-    private  void sendTextMsg(final byte head, final String msg)
+    private synchronized   void sendTextMsg(final byte head, final String msg)
     {
+        //测试-----------------------------------------------------
         Intent it=new Intent(NOTICE_TYPE_GETTED_MSG);
         it.putExtra("json","发送的消息：\n"+msg);
         sendBroadcast(it);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -496,7 +497,6 @@ public  class TcpService extends Service implements DataOperator {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }finally {
-
                     if(dataOutputStream!=null) {
                         try {
                             dataOutputStream.close();
@@ -533,7 +533,7 @@ public  class TcpService extends Service implements DataOperator {
      * @throws IOException
      */
     @Override
-    public synchronized void sendRenameFileMsg( String path,String newPath) throws IOException {
+    public void sendRenameFileMsg( String path,String newPath) throws IOException {
         // TODO Auto-generated method stub
         final String msg=String.format("{\"command\":\"%s\",\"path\":\"%s\",\"new_path\":\"%s\"}", REQUEST_TYPE_RENAME_FILE,path,newPath);
         sendTextMsg(DATA_TYPE_CHAR,msg);
@@ -553,7 +553,7 @@ public  class TcpService extends Service implements DataOperator {
      * @throws IOException
      */
     @Override
-    public synchronized void sendDeleteFileMsg( String path) throws IOException {
+    public  void sendDeleteFileMsg( String path) throws IOException {
         // TODO Auto-generated method stub
         final String msg=String.format("{\"command\":\"%s\",\"path\":\"%s\"}", REQUEST_TYPE_DELETE_FILE,path);
         sendTextMsg(DATA_TYPE_CHAR,msg);
@@ -569,7 +569,7 @@ public  class TcpService extends Service implements DataOperator {
      * @throws IOException
      */
     @Override
-    public synchronized void sendSendFileMsg(String path) throws IOException {
+    public  void sendSendFileMsg(String path) throws IOException {
         // TODO Auto-generated method stub
         final String msg=String.format("{\"command\":\"%s\",\"path\":\"%s\"}", REQUEST_TYPE_SEND_FILE,path);
 
@@ -589,12 +589,11 @@ public  class TcpService extends Service implements DataOperator {
             @Override
             public void run() {
                 Socket socket= null;
-                OutputStream outputStream=null;
                 DataOutputStream dataOutputStream = null;
                 try {
                     socket = new Socket(remoteHost, remotePort);
-                    outputStream=socket.getOutputStream();
-                     dataOutputStream=new DataOutputStream(outputStream);
+                    out=socket.getOutputStream();
+                     dataOutputStream=new DataOutputStream(out);
                     byte[] buf=new byte[BUFFER_SIZE];
                     int count=0;
                     int sentSize=0;//已发送的字节数
@@ -652,9 +651,10 @@ public  class TcpService extends Service implements DataOperator {
      * @param file 保存的地方
      */
     @Override
-    public  void saveFile( File file) throws IOException {
+    public synchronized  void saveFile( File file) throws IOException {
         // TODO Auto-generated method stub
         FileOutputStream fileOutputStream=new FileOutputStream(file);
+        System.out.println("saveFile:"+file.toString());
         byte[] buf=new byte[BUFFER_SIZE];
         int len=0;
         DataInputStream dataInputStream=new DataInputStream(in);
@@ -677,7 +677,7 @@ public  class TcpService extends Service implements DataOperator {
      * @throws
      */
     @Override
-    public synchronized String readCommand() throws IOException {
+    public synchronized  String readCommand() throws IOException {
         //TODO Auto-generated method stub
         BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(in));
         int ch=-1;
@@ -736,7 +736,7 @@ public  class TcpService extends Service implements DataOperator {
      * @throws IOException
      */
     @Override
-    public synchronized void sendGetContentMsg( String path) throws IOException {
+    public  void sendGetContentMsg( String path) throws IOException {
         // TODO Auto-generated method stub
 
         final String msg=String.format("{\"command\":\"%s\",\"path\":\"%s\"}", REQUEST_TYPE_GET_CONTENT,path);
@@ -749,7 +749,7 @@ public  class TcpService extends Service implements DataOperator {
      *如果收到这个命令就更新自己的远程文件列表
      */
     @Override
-    public synchronized void sendContent() throws IOException {
+    public synchronized  void sendContent() throws IOException {
         // TODO Auto-generated method stub
         final StringBuilder msg=new StringBuilder();
         File[] files=new File(getRemoteRequestRoot()).listFiles();
@@ -780,7 +780,7 @@ public  class TcpService extends Service implements DataOperator {
      * @throws IOException
      */
     @Override
-    public synchronized void sendGetFileMsg(String remoteFile) throws IOException {
+    public  void sendGetFileMsg(String remoteFile) throws IOException {
         // TODO Auto-generated method stub
         final String msg=String.format("{\"command\":\"%s\",\"path\":\"%s\"}", REQUEST_TYPE_GET_FILE,remoteFile);
         sendTextMsg(DATA_TYPE_CHAR,msg);

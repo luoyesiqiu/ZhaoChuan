@@ -1,11 +1,14 @@
 package com.zyw.zhaochuan.entity;
 
+import java.io.Serializable;
+
 import cn.bmob.v3.BmobObject;
+import cn.bmob.v3.datatype.BmobFile;
 
 /**
  * Created by zyw on 2016/7/24.
  */
-public class FileSessionList extends BmobObject {
+public class FileSessionList extends BmobObject implements Serializable {
 
 
     public void setFileSize(String fileSize) {
@@ -20,11 +23,27 @@ public class FileSessionList extends BmobObject {
         this.fileKey = fileKey;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setFile(BmobFile file) {
+        this.file = file;
     }
 
-    private String url;
+    public BmobFile getFile() {
+        return file;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public String getFileSize() {
+        return fileSize;
+    }
+
+    public String getFileKey() {
+        return fileKey;
+    }
+
+    private BmobFile file;
     private  String fileName;
     private  String fileSize;
     private  String fileKey;

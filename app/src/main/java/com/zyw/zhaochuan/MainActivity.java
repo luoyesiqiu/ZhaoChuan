@@ -156,11 +156,11 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
         Intent intent;
         switch (id){
-            //设置
-            case R.id.nav_setting:
-                 intent=new Intent(MainActivity.this, SettingActivity.class);
-                startActivity(intent);
-                break;
+//            //设置
+//            case R.id.nav_setting:
+//                 intent=new Intent(MainActivity.this, SettingActivity.class);
+//                startActivity(intent);
+//                break;
             //分享
             case R.id.nav_share:
                 intent=new Intent(MainActivity.this, ShareActivity.class);

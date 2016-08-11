@@ -275,7 +275,7 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
             }
             final File finalSelectedPath = selectedPath;
             //根据长按的项目，判段生成数组
-            final String[] menuArr= isFileItem? getResources().getStringArray(R.array.menu_item_file):getResources().getStringArray(R.array.menu_item_folder);
+            final String[] menuArr= isFileItem? getResources().getStringArray(R.array.local_context_menu_item_file):getResources().getStringArray(R.array.local_context_menu_item_folder);
             final boolean finalIsFileItem = isFileItem;
             Dialog dialog = new AlertDialog.Builder(rootAct)
                     .setItems(menuArr, new DialogInterface.OnClickListener() {
@@ -391,13 +391,13 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
     }
 
     /**
-     * 当销毁视图时发生
+     * 当销毁视图时发生，切换标签卡就会发生，在这里不宜解注广播
      */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         ((ViewGroup) rootView.getParent()).removeView(rootView);
-
+//        rootAct.unregisterReceiver(broadcastReceiver);
         Log.v(TAG,"摧毁");
     }
 
