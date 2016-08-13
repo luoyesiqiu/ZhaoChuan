@@ -396,6 +396,26 @@ public  class TcpService extends Service implements DataOperator {
             }
                 while(isServer)
                 {
+
+                    try {
+                        isCanCreateThread=false;//标记不能创建新线程
+                        socket=serverSocket.accept();
+                        isCanCreateThread=true;//这个线程有连接进入了，不等待了，另外的一个线程可以创建线程了
+                        out=socket.getOutputStream();
+                        in=socket.getInputStream();
+                        byte dataType=-1;
+                        DataInputStream dataInputStream=new DataInputStream(in);
+                        dataType=dataInputStream.readByte();
+                        if(dataType==DATA_TYPE_CHAR){
+                            //字符流
+                            runCmd();
+                        }else if(dataType==DATA_TYPE_BYTE) {
+                            saveFile(new File(getSaveFilePath()));
+                        }
+                    }catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }/*
                     if(!isCanCreateThread)
                         continue;//如果有一个线程在等待，那么就不创建新线程
                     new Thread(new Runnable() {
@@ -421,7 +441,7 @@ public  class TcpService extends Service implements DataOperator {
                                 e.printStackTrace();
                             }
                         }
-                    }).start();
+                    }).start();*/
                  }
         }
 
