@@ -221,6 +221,7 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
                 if (e == null) {
                     showToast("下载完成");
                     loadList(curPath,false);
+                    fileListAdapter.notifyDataSetChanged();
                 } else {
                     showToast("下载失败");
                 }
