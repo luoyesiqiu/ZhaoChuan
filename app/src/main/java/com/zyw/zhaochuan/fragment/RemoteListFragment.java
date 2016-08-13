@@ -68,7 +68,7 @@ public class RemoteListFragment extends Fragment {
             rootAct=SessionActivity.thiz;//放在这里
             application=(ThisApplication)rootAct.getApplication();
             //根据平台设置根目录
-            curPath=new File(((ThisApplication)rootAct.getApplication()).getFileRoot());
+            curPath=new File(application.getFileRoot());
             rootView = inflater.inflate(R.layout.file_list_layout, null);
             recyclerView = (RecyclerView) rootView.findViewById(R.id.filelist_reclyclerview);
             pasteFloatButton=(FloatingActionButton)rootView.findViewById(R.id.float_button_paste);
@@ -96,7 +96,7 @@ public class RemoteListFragment extends Fragment {
             progressDialog=ProgressDialog.show(SessionActivity.thiz,"",getResources().getString(R.string.progress_bar_getting_list));
             progressDialog.setCancelable(true);
             //发送获取目录消息
-            sendGetContentMsg(curPath.getAbsolutePath());
+            sendGetContentMsg(curPath.toString());
 
             //粘贴按钮
             pasteFloatButton.setOnClickListener(new View.OnClickListener() {
@@ -146,17 +146,17 @@ public class RemoteListFragment extends Fragment {
          */
         @Override
         public void onItemClick(View view, int pos) {
-            if (pos == 0 && !(curPath.toString().equals("/")||curPath.toString().equals("")))
+            if (pos == 0 && !(curPath.toString().equals("/")))
             {
                 goBack();
             }
             //点击文件夹时,这里要注意数组的范围
-            else if ((pos == 0 && (curPath.toString().equals("/")||curPath.toString().equals(""))) || !files[pos-1].isFile())
+            else if ((pos == 0 && curPath.toString().equals("/")) || !files[pos-1].isFile())
             {
                 try
                 {
-                    //对根目录的处理,为空时是电脑根目录
-                    if (curPath.toString().equals("/")&&curPath.toString().equals(""))
+                    //对根目录的处理,为/时是电脑根目录
+                    if (curPath.toString().equals("/"))
                     {
                         curPath =new File(files[pos].getAbsolutePath());
                     }
@@ -194,7 +194,7 @@ public class RemoteListFragment extends Fragment {
         public void onItemLongClick(View view, int pos) {
             FileListParser.RFile selectedPath=null;
              boolean isFileItem=false;
-            if (pos == 0 && !curPath.toString().equals("/"))
+            if (pos == 0 && (!curPath.toString().equals("/")||!curPath.equals("")))
             {
                     return;
             }
@@ -317,6 +317,8 @@ public class RemoteListFragment extends Fragment {
     public void goBack() {
         try
         {
+            if(curPath.getAbsolutePath().equals("/"))
+                return;
             progressDialog=ProgressDialog.show(SessionActivity.thiz,"",getResources().getString(R.string.progress_bar_getting_list));
             progressDialog.setCancelable(true);
             curPath=curPath.getParentFile();

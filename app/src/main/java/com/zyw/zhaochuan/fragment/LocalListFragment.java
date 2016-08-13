@@ -99,9 +99,6 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
             //列表长按事件
             fileListAdapter.setOnItemLongClickListener(new RecyclerViewEvents());
             recyclerView.setAdapter(fileListAdapter);
-            recyclerView.setFocusable(true);//这个和下面的这个命令必须要设置了，才能监听back事件。
-            recyclerView.setFocusableInTouchMode(true);
-            recyclerView.setOnKeyListener(backlistener);
 
             //按下粘贴按钮
             pasteFloatButton.setOnClickListener(new View.OnClickListener() {
@@ -370,6 +367,9 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
     public void goBack() {
         try
         {
+
+            if(curPath.getAbsolutePath().equals("/"))
+                return;
             curPath = curPath.getParentFile();
             //缓存都不为空时才能使用缓存
             if (fileListItemsCache!=null)
@@ -427,20 +427,6 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
         toast.show();
     }
 
-    private View.OnKeyListener backlistener = new View.OnKeyListener() {
-        @Override
-        public boolean onKey(View view, int code, KeyEvent keyEvent) {
-            if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
-                if (code == KeyEvent.KEYCODE_BACK) {  //表示按返回键 时的操作
-                    if(!curPath.getAbsolutePath().equals("/"))
-                    {
-                        goBack();
-                    }
-                }
-            }
-            return false;
-        }
-    };
     /**
      * 加载列表，有ui操作
      * @param path

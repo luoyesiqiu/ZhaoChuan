@@ -4,9 +4,11 @@ import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -123,9 +125,6 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
             //列表长按事件
             fileListAdapter.setOnItemLongClickListener(new RecyclerViewEvents());
             recyclerView.setAdapter(fileListAdapter);
-            recyclerView.setFocusable(true);//这个和下面的这个命令必须要设置了，才能监听back事件。
-            recyclerView.setFocusableInTouchMode(true);
-            recyclerView.setOnKeyListener(backlistener);
             //粘贴文件
             pasteFloatButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -168,12 +167,29 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
                     .setSmallIcon(R.mipmap.ic_launcher);
             //设置扫码回调
             CaptureShareQRActivity.setCaptureCompleteCallback(this);
+
+
+            IntentFilter intentFilter=new IntentFilter();
+            intentFilter.addAction(rootAct.NOTICE_BACKKEY_PRESS);
+            rootAct.registerReceiver(broadcastReceiver,intentFilter);
         }
         showToast("长按可以分享文件噢~");
         rootAct.getSupportActionBar().show();//显示ActionBar
         rootAct.getSupportActionBar().setTitle(getShortPath(curPath.toString()));
         return rootView;
     }
+
+
+    BroadcastReceiver broadcastReceiver=new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final  String action=intent.getAction();
+            if(action.equals(rootAct.NOTICE_BACKKEY_PRESS))
+            {
+                goBack();
+            }
+        }
+    };
     /**
      * 复制本地文件的进度
      * @param current
@@ -501,6 +517,8 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
     public void goBack() {
         try
         {
+            if(curPath.getAbsolutePath().equals("/"))
+                return;
             curPath = curPath.getParentFile();
             //缓存都不为空时才能使用缓存
             if (fileListItemsCache!=null)
@@ -557,20 +575,6 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
         toast.show();
     }
 
-    private View.OnKeyListener backlistener = new View.OnKeyListener() {
-        @Override
-        public boolean onKey(View view, int code, KeyEvent keyEvent) {
-            if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
-                if (code == KeyEvent.KEYCODE_BACK) {  //表示按返回键 时的操作
-                    if(!curPath.getAbsolutePath().equals("/"))
-                    {
-                        goBack();
-                    }
-                }
-            }
-            return false;
-        }
-    };
     /**
      * 加载列表，有ui操作
      * @param path

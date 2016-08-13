@@ -15,6 +15,7 @@ import com.zyw.zhaochuan.fragment.ShareFileListFragment;
  * Created by zyw on 2016/7/20.
  */
 public class ShareActivity extends AppCompatActivity {
+    public static final String NOTICE_BACKKEY_PRESS = "notice_back_key_press";
     public static ShareActivity thiz;
     private  FragmentTransaction transaction;
     @Override
@@ -34,7 +35,12 @@ public class ShareActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.share_menu, menu);
         return true;
     }
-
+    @Override
+    public void onBackPressed() {
+        //这里目的为了通知fragment，activity已经按下返回键，让她们自己处理
+        Intent intent=new Intent(NOTICE_BACKKEY_PRESS);
+        sendBroadcast(intent);
+    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 

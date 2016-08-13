@@ -48,7 +48,7 @@ public class ThisApplication extends Application {
     public void onCreate() {
         super.onCreate();
         appPort=3574;
-        fileRoot="";
+        this.fileRoot="";
         commonFileBmp= BitmapFactory.decodeResource(getResources(),R.mipmap.common_file);
         imageFileBmp=BitmapFactory.decodeResource(getResources(),R.mipmap.image_file);
         audioFileBmp=BitmapFactory.decodeResource(getResources(),R.mipmap.audio_file);
@@ -61,18 +61,19 @@ public class ThisApplication extends Application {
         excelFileBmp =BitmapFactory.decodeResource(getResources(),R.mipmap.excel_file);
         wordFileBmp=BitmapFactory.decodeResource(getResources(),R.mipmap.word_file);
 
-        File logFile=new File(Environment.getExternalStorageDirectory().getAbsoluteFile()+"zhaochuan.txt");//删除日志
-        if(logFile.exists())
+        File logFile=new File(Environment.getExternalStorageDirectory().getAbsolutePath()+File.separator+"zhaochuan.txt");//删除日志
+        System.out.println("日志文件："+logFile);
+        if(logFile.exists()&&logFile.length()>1024*100)//当日志文件存在并且大于100k
             logFile.delete();
     }
     public String getFileRoot()
-    {
-        return fileRoot;
+    {        return this.fileRoot;
+
     }
 
     public void setFileRoot(String path)
     {
-        fileRoot=path;
+        this.fileRoot=path;
     }
 
 

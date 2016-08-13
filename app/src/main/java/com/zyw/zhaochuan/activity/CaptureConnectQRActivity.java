@@ -189,7 +189,7 @@ public class CaptureConnectQRActivity extends Activity implements Callback
         try {
             qrBodyParser = new ConnectQRBodyParser(text);
 			//根据平台设置根目录
-			String root=qrBodyParser.isPC()?"":"/sdcard";
+			String root=qrBodyParser.isPC()?"/":"/sdcard";
 			((ThisApplication)getApplication()).setFileRoot(root);
 
 			//==================================================================
