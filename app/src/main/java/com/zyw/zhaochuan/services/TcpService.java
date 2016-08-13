@@ -282,6 +282,7 @@ public  class TcpService extends Service implements DataOperator {
 
                 try {
                     setSaveFilePath(json.getString("path"));
+                    System.out.println(json.getString("path"));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -418,32 +419,7 @@ public  class TcpService extends Service implements DataOperator {
                             }catch (Exception e)
                             {
                                 e.printStackTrace();
-                            }finally {
-                                //不能关啊
-                                //关闭客户端socket--------------------------------------------------
-                               /* if(in!=null) {
-                                    try {
-                                        in.close();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                if(out!=null) {
-                                    try {
-                                        out.close();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                if(socket!=null) {
-                                    try {
-                                        socket.close();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }*/
-                                //==================================================================
-                        }
+                            }
                         }
                     }).start();
                  }
@@ -752,6 +728,7 @@ public  class TcpService extends Service implements DataOperator {
     public synchronized  void sendContent() throws IOException {
         // TODO Auto-generated method stub
         final StringBuilder msg=new StringBuilder();
+        System.out.println("请求的目录："+getRemoteRequestRoot());
         File[] files=new File(getRemoteRequestRoot()).listFiles();
         Arrays.sort(files,new FileNameSort());
         msg.append(String.format("{\"command\":\"%s\",\"root\":\"%s\",\"files\":["

@@ -24,6 +24,8 @@ import android.widget.Toast;
 
 import com.zyw.zhaochuan.R;
 import com.zyw.zhaochuan.ThisApplication;
+import com.zyw.zhaochuan.fragment.LocalListFragment;
+import com.zyw.zhaochuan.fragment.RemoteListFragment;
 import com.zyw.zhaochuan.fragment.SessionFragment;
 import com.zyw.zhaochuan.fragment.ShowConnectQRFragment;
 import com.zyw.zhaochuan.interfaces.OnTransProgressChangeListener;
@@ -49,7 +51,7 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
     public  static TcpService tcpService;
     private  final String TAG="SessionActivity";
     //private ProgressDialog progressDialog;
-
+    public static  boolean isLocalFragment=false;//标记当前选中的是哪个标签卡
     private Notification.Builder notiBuilder;
     private NotificationManager notificationManager;
     @Override
@@ -195,15 +197,16 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-       // menu.add("粘贴");
+        getMenuInflater().inflate(R.menu.session_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
+       final  int id=item.getItemId();
         //按下左上角的返回键
-        if(item.getItemId()==android.R.id.home)
+        if(id==android.R.id.home)
         {
             new AlertDialog.Builder(this)
                     .setTitle("提示")
@@ -220,6 +223,25 @@ public class SessionActivity extends AppCompatActivity implements OnTransProgres
                     .show();
 
         }
+        else if(id==R.id.session_menu_refresh) {
+             //刷新
+            //根据当前选中的选项卡进行做动作
+            if(SessionActivity.isLocalFragment)
+            {
+                Intent loadListIntent=new Intent(LocalListFragment.NOTICE_LOAD_LIST);
+                sendBroadcast(loadListIntent);
+            }else
+            {
+                try {
+                    tcpService.sendGetContentMsg(RemoteListFragment.curPath.getAbsolutePath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
+        }
+
         return super.onOptionsItemSelected(item);
     }
 

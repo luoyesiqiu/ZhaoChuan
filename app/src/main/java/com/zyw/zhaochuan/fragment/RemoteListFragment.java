@@ -131,6 +131,7 @@ public class RemoteListFragment extends Fragment {
         }
 
         rootAct.getSupportActionBar().setTitle(getShortPath(curPath.toString()));
+        SessionActivity.isLocalFragment=false;
         return rootView;
     }
 

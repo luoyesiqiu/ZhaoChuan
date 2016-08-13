@@ -72,6 +72,7 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
     private  PackageManager pm = null;
     private SessionActivity rootAct;
     private  ThisApplication application;
+    public static String NOTICE_LOAD_LIST="notice_load_list";
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -145,6 +146,7 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
             });
             IntentFilter intentFilter=new IntentFilter();
             intentFilter.addAction(rootAct.NOTICE_BACKKEY_PRESS);
+            intentFilter.addAction(NOTICE_LOAD_LIST);//更新本地列表
             rootAct.registerReceiver(broadcastReceiver,intentFilter);
             application=(ThisApplication)rootAct.getApplication();
             application.setCopyFromLocal(false);//初始设置为没有复制
@@ -157,14 +159,20 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
 
         rootAct.getSupportActionBar().show();//显示ActionBar
         rootAct.getSupportActionBar().setTitle(getShortPath(curPath.toString()));
+        SessionActivity.isLocalFragment=true;
         return rootView;
     }
 
     BroadcastReceiver broadcastReceiver=new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals(rootAct.NOTICE_BACKKEY_PRESS)){
+            final String action=intent.getAction();
+            if(action.equals(rootAct.NOTICE_BACKKEY_PRESS)){
                 goBack();
+            }else if(action.equals(NOTICE_LOAD_LIST))
+            {
+                loadList(curPath,true);
+                fileListAdapter.notifyDataSetChanged();
             }
         }
     };
@@ -286,9 +294,11 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
                                     //如果是文件，它是发送
                                     try {
                                         //空判断
-                                        String remoteFilePath=RemoteListFragment.curPath==null?"/sdcard":RemoteListFragment.curPath.getAbsolutePath();
+                                        String remoteFilePath=RemoteListFragment.curPath==null?application.getFileRoot():RemoteListFragment.curPath.getAbsolutePath();
                                         //通知对方该存文件在哪
                                         SessionActivity.tcpService.sendSendFileMsg(remoteFilePath+File.separator+finalSelectedPath.getName());
+                                        //通知对方给自己发的目录
+                                        SessionActivity.tcpService.setRemoteRequestRoot(finalSelectedPath.getPath());
                                         //发送文件
                                         SessionActivity.tcpService.sendFile(finalSelectedPath);
                                     } catch (IOException e) {
