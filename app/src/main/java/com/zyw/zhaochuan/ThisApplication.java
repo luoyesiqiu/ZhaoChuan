@@ -1,22 +1,26 @@
 package com.zyw.zhaochuan;
 
+import android.app.Activity;
 import android.app.Application;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
 
+import com.zyw.zhaochuan.util.CrashHandler;
 import com.zyw.zhaochuan.util.Utils;
 
 import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Created by zyw on 2016/7/23.
  */
-public class ThisApplication extends Application {
+public class ThisApplication extends Application{
     public static Bitmap commonFileBmp,folderBmp ,remoteFolderBmp,imageFileBmp,videoFileBmp,audioFileBmp,achieveFileBmp,pptFileBmp, excelFileBmp,wordFileBmp,apkFileBmp;
     private  String fileRoot;
     private  int appPort;
-
+    private  ArrayList<Activity> list = new ArrayList<Activity>();
     public String getLocalIP() {
         return localIP;
     }
@@ -65,6 +69,9 @@ public class ThisApplication extends Application {
         System.out.println("日志文件："+logFile);
         if(logFile.exists()&&logFile.length()>1024*100)//当日志文件存在并且大于100k
             logFile.delete();
+
+      CrashHandler crashHandler = new CrashHandler(this);
+        Thread.setDefaultUncaughtExceptionHandler(crashHandler);
     }
     public String getFileRoot()
     {        return this.fileRoot;
@@ -80,5 +87,29 @@ public class ThisApplication extends Application {
     public int getAppPort()
     {
         return appPort;
+    }
+
+    /**
+     * Activity关闭时，删除Activity列表中的Activity对象*/
+    public void removeActivity(Activity a){
+        list.remove(a);
+    }
+
+    /**
+     * 向Activity列表中添加Activity对象*/
+    public void addActivity(Activity a){
+        list.add(a);
+    }
+
+    /**
+     * 关闭Activity列表中的所有Activity*/
+    public void finishActivity(){
+        for (Activity activity : list) {
+            if (null != activity) {
+                activity.finish();
+            }
+        }
+        //杀死该应用进程
+        android.os.Process.killProcess(android.os.Process.myPid());
     }
 }

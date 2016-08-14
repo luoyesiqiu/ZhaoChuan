@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity
     private  Button bn_connect;
     NavigationView navigationView;
     private boolean isServer;//标记是否是服务端
+    public  static  MainActivity thiz;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity
         setupWindowExitAnimation();
 
         Bmob.initialize(getApplicationContext(),"e0294739d44256d3ebcef804504885b3");
+        thiz=this;
     }
     private  void setupWindowExitAnimation()
     {
