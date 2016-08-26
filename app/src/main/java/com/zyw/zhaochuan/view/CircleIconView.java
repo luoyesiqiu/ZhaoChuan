@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
@@ -28,7 +29,7 @@ public class CircleIconView extends View
 	private int type;
 	private static final int TYPE_CIRCLE = 0;
 	private static final int TYPE_ROUND = 1;
-
+	private  Paint redPaint;
 	/**
 	 * 图片
 	 */
@@ -93,6 +94,11 @@ public class CircleIconView extends View
 			}
 		}
 		a.recycle();
+		redPaint =new Paint();
+		redPaint.setColor(Color.RED);
+		redPaint.setAntiAlias(true);
+		redPaint.setStrokeWidth(10);
+		redPaint.setStyle(Paint.Style.STROKE);
 	}
 
 	/**
@@ -194,6 +200,7 @@ public class CircleIconView extends View
 		 * 首先绘制圆形
 		 */
 		canvas.drawCircle(min / 2, min / 2, min / 2, paint);
+
 		/**
 		 * 使用SRC_IN，参考上面的说明
 		 */
@@ -202,6 +209,8 @@ public class CircleIconView extends View
 		 * 绘制图片
 		 */
 		canvas.drawBitmap(source, 0, 0, paint);
+
+		//canvas.drawCircle(min/2,min/2,min/2+5,redPaint);
 		return target;
 	}
 

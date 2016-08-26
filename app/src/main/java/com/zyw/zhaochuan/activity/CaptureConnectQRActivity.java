@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.util.Vector;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -31,6 +33,7 @@ import com.zyw.zhaochuan.ThisApplication;
 import com.zyw.zhaochuan.camera.CameraManager;
 import com.zyw.zhaochuan.decoding.CaptureActivityHandler;
 import com.zyw.zhaochuan.decoding.InactivityTimer;
+import com.zyw.zhaochuan.interfaces.ConnectCallback;
 import com.zyw.zhaochuan.parser.ConnectQRBodyParser;
 import com.zyw.zhaochuan.util.Utils;
 import com.zyw.zhaochuan.view.ViewfinderView;
@@ -43,7 +46,7 @@ import org.json.JSONException;
  * @author zyw
  *扫描连接二维码界面
  */
-public class CaptureConnectQRActivity extends Activity implements Callback
+public class CaptureConnectQRActivity extends Activity implements Callback,ConnectCallback
 {
 	private CaptureActivityHandler handler;
 	private ViewfinderView viewfinderView;
@@ -55,7 +58,7 @@ public class CaptureConnectQRActivity extends Activity implements Callback
 	private boolean playBeep;
 	private static final float BEEP_VOLUME = 0.10f;
 	private boolean vibrate;
-
+    private  ProgressDialog progressDialog;
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState)
@@ -74,6 +77,8 @@ public class CaptureConnectQRActivity extends Activity implements Callback
 		super.onResume();
 		SurfaceView surfaceView = (SurfaceView) findViewById(R.id.preview_view);
 		SurfaceHolder surfaceHolder = surfaceView.getHolder();
+
+
 		if (hasSurface)
 		{
 			initCamera(surfaceHolder);
@@ -191,7 +196,6 @@ public class CaptureConnectQRActivity extends Activity implements Callback
 			//根据平台设置根目录
 			String root=qrBodyParser.isPC()?"/":"/sdcard";
 			((ThisApplication)getApplication()).setFileRoot(root);
-
 			//==================================================================
 			if(!qrBodyParser.isAsAP()) {
 				//如果扫到对方不是Ap
@@ -205,45 +209,15 @@ public class CaptureConnectQRActivity extends Activity implements Callback
 
 				//如果扫到对方是Ap,连接WIfI，并获取Ip-----------------------------------------------
 				final ConnectQRBodyParser finalQrBodyParser = qrBodyParser;
+
 				WifiManager wifiManager=(WifiManager)getSystemService(Context.WIFI_SERVICE);
 				WifiAutoConnectManager wifiAutoConnectManager=new WifiAutoConnectManager(wifiManager);
 				wifiAutoConnectManager.connect(finalQrBodyParser.getSsid(),qrBodyParser.getKey(), WifiAutoConnectManager.WifiCipherType.WIFICIPHER_WPA);
-				Toast.makeText(getApplication(), "正在连接对方手机，请稍等。。。", Toast.LENGTH_LONG).show();
-				int i=0;
-				boolean isSuccess=false;//标记是否连上了
-				while (i++<=3000)
-				{
-					String ssid=wifiManager.getConnectionInfo().getSSID();
-					if(ssid!=null) {
-						//判断ssid和网关ip是否正确。
-						if(ssid.contains(finalQrBodyParser.getSsid())&&wifiManager.getDhcpInfo().gateway!=0)
-						{
-							isSuccess=true;
-							break;
-						}
-					}
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-				//判断是否成功
-				if(isSuccess) {
-					DhcpInfo dhcpInfo = wifiManager.getDhcpInfo();
-					//Toast.makeText(getApplication(), "网关："+dhcpInfo.gateway, Toast.LENGTH_LONG).show();
-					Utils.writeLogToSdcard(Utils.int2Ip(dhcpInfo.gateway));
-					Intent intentAct = new Intent(CaptureConnectQRActivity.this, SessionActivity.class);
-					intentAct.setAction(SessionActivity.ACTION_SHOW_SESSION);
-					intentAct.putExtra("remote_ip", Utils.int2Ip(dhcpInfo.gateway));
-					intentAct.putExtra("isServer", false);
-					startActivity(intentAct);
-					finish();
-				}else {
-					Toast.makeText(getApplicationContext(),"连接失败，请重试。",Toast.LENGTH_LONG).show();
-					onPause();
-					onResume();//刷新
-				}
+
+                progressDialog=ProgressDialog.show(this,"","正在连接中,请稍后...",false);
+                ConnectThread connectThread=new ConnectThread(this,finalQrBodyParser,wifiManager);
+                connectThread.start();
+
 			}
         } catch (JSONException e) {
             Toast.makeText(getApplicationContext(),getResources().getString(R.string.qr_error),Toast.LENGTH_LONG).show();
@@ -251,8 +225,87 @@ public class CaptureConnectQRActivity extends Activity implements Callback
 			onResume();//刷新
             e.printStackTrace();
         }
+	}
 
+    @Override
+    public void onConnectComplete(WifiManager wifiManager,boolean isSuccess) {
+        //判断是否成功
+        if(isSuccess) {
+            final DhcpInfo dhcpInfo = wifiManager.getDhcpInfo();
+            Utils.writeLogToSdcard(Utils.int2Ip(dhcpInfo.gateway));
 
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intentAct = new Intent(CaptureConnectQRActivity.this, SessionActivity.class);
+                    intentAct.setAction(SessionActivity.ACTION_SHOW_SESSION);
+                    intentAct.putExtra("remote_ip", Utils.int2Ip(dhcpInfo.gateway));
+                    intentAct.putExtra("isServer", false);
+                    startActivity(intentAct);
+                    finish();
+                }
+            });
+        }else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(),"连接失败，请重试。",Toast.LENGTH_LONG).show();
+                    onPause();
+                    onResume();//刷新
+                }
+            });
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                progressDialog.hide();
+            }
+        });
+
+    }
+
+    private  class ConnectThread extends Thread
+	{
+		private  ConnectCallback callback;
+		private  WifiManager wifiManager;
+		private ConnectQRBodyParser parser;
+		public ConnectThread(ConnectCallback callback,ConnectQRBodyParser parser,WifiManager wifiManager)
+		{
+			this.callback=callback;
+			this.parser=parser;
+			this.wifiManager=wifiManager;
+		}
+		@Override
+		public void run() {
+			int i=0;
+			boolean isSuccess=false;//标记是否连上了
+            //
+            System.out.println(wifiManager.getConnectionInfo().getSSID()+","+parser.getSsid());
+            if(wifiManager.getConnectionInfo().getSSID().contains(parser.getSsid()))
+            {
+                callback.onConnectComplete(wifiManager,true);
+                return ;
+            }
+			while (i++<=300)
+			{
+				String ssid=wifiManager.getConnectionInfo().getSSID();
+				if(ssid!=null) {
+					//判断ssid和网关ip是否正确。
+					if(ssid.contains(parser.getSsid())&&wifiManager.getDhcpInfo().gateway!=0)
+					{
+						isSuccess=true;
+						break;
+					}
+				}
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					continue;
+				}
+			}
+            callback.onConnectComplete(wifiManager,isSuccess);
+		}
 	}
 
 	private void initBeepSound()

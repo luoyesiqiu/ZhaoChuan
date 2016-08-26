@@ -386,7 +386,7 @@ public class RemoteListFragment extends Fragment {
         }
         for(int i = 0; i< files.length; i++)
         {
-            String tempName=files[i].getName();
+            String tempName=files[i].getName().toLowerCase();
             if(!files[i].isFile()) {
                 fileListItems.add(new FileListItem(application.remoteFolderBmp
                         , files[i].getName()

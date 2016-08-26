@@ -250,7 +250,8 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
              */
             @Override
             public void onProgress(Integer current, long lmax) {
-                if (current >= 100) {
+                //current小于0是bmob的bug
+                if (current >= 100||current<0) {
                     downloadNotiBuilder = new Notification.Builder(rootAct);
                     downloadNotiBuilder.setSmallIcon(R.mipmap.ic_launcher);
                     downloadNotiBuilder.setContentTitle("下载完成").setTicker("下载完成");
@@ -595,7 +596,7 @@ public class ShareFileListFragment extends Fragment implements FileListInterface
         }
         for(int i = 0; i< files.length; i++)
         {
-            String tempName=files[i].getName();
+            String tempName=(files[i].getName()).toLowerCase();
             if(files[i].isDirectory()) {
                 fileListItems.add(new FileListItem(application.folderBmp
                         , files[i].getName()

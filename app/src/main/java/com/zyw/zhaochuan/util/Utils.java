@@ -19,6 +19,7 @@ import java.util.UUID;
 
 /**
  * Created by zyw on 2016/5/5.
+ * 工具类
  */
 public class Utils {
 

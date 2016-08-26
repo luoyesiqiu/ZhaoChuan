@@ -57,7 +57,7 @@ public  class TcpService extends Service implements DataOperator {
     public static final String REQUEST_TYPE_DELETE_FILE="delete_file";//删除文件
     public static final String REQUEST_TYPE_GET_FILE="get_file";//请求获取远端文件
     public static final String REQUEST_TYPE_CONNECTED="connect_server";//请求连接
-    public static final String REQUEST_TYPE_DISCONNECT="disconnect";//请求连接
+    public static final String REQUEST_TYPE_DISCONNECT="disconnect";//请求断开连接
     public static final String REQUEST_TYPE_COPY_FILE="copy_file";//收到这个命令，就将本地文件复制到本地的另一个位置
     /**应答类型**/
     public static final String RESPONSE_TYPE_CONTENT="resp_list";//表示收到目录，收到这个命令就更新自己的远程文件列表
@@ -372,7 +372,7 @@ public  class TcpService extends Service implements DataOperator {
 
 
     /*
-    * **********************************************************************
+    * ********************************************************************
      *服务器的线程
      * *******************************************************************
      * */

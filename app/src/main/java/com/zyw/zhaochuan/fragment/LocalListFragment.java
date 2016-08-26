@@ -447,7 +447,7 @@ public class LocalListFragment extends Fragment implements FileListInterface,OnT
         }
         for(int i = 0; i< files.length; i++)
         {
-            String tempName=files[i].getName();
+            String tempName=files[i].getName().toLowerCase();
             if(files[i].isDirectory()) {
                 fileListItems.add(new FileListItem(application.folderBmp
                         , files[i].getName()
