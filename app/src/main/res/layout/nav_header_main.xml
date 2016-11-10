@@ -12,7 +12,7 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
-    <com.zyw.zhaochuan.view.CircleIconView
+    <com.woc.chuan.view.CircleIconView
         android:layout_marginTop="10dp"
         android:id="@+id/imageView"
         android:layout_width="wrap_content"
