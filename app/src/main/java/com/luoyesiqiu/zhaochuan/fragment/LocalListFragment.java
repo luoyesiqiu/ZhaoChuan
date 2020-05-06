@@ -508,9 +508,9 @@ public class LocalListFragment extends Fragment implements FileListInterface, On
 
                 if(icon==null)
                 {
-                    apkIcon=application.apkFileBmp;
+                    apkIcon = application.apkFileBmp;
                 }else {
-                    apkIcon = ((BitmapDrawable) icon).getBitmap();
+                    apkIcon = Utils.drawableToBitmap(icon);
                 }
                 fileListItems.add(new FileListItem(apkIcon
                         , files[i].getName()
